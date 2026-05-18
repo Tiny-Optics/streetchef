@@ -1,0 +1,5 @@
+{
+  "name": "StreetChef",
+  "description": "A food delivery application.",
+  "requestFramePermissions": ["geolocation"]
+}
