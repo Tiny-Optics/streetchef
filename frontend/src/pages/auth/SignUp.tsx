@@ -1,53 +1,94 @@
-import React, { useState } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
-import { useAppContext } from '../../context/AppContext';
+import React, {useState} from 'react';
+import {useNavigate, Link, useSearchParams} from 'react-router-dom';
+import {ArrowLeft, Eye, EyeOff} from 'lucide-react';
+import {signUp} from '../../lib/auth-client';
+import {useAppContext} from '../../context/AppContext';
 
 export const SignUp: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const type = searchParams.get('type');
-  const { setUser } = useAppContext();
+  const {refreshUserData} = useAppContext();
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  
-  // Driver specific fields
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
   const [vehicleMake, setVehicleMake] = useState('');
   const [vehicleModel, setVehicleModel] = useState('');
   const [vehicleYear, setVehicleYear] = useState('');
   const [licensePlate, setLicensePlate] = useState('');
   const [driversLicense, setDriversLicense] = useState('');
 
-  // Merchant specific fields
   const [kitchenName, setKitchenName] = useState('');
   const [kitchenAddress, setKitchenAddress] = useState('');
   const [cuisineType, setCuisineType] = useState('');
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreed) return;
-    
+
+    if (!name || !email || !password) {
+      setError('Name, email, and password are required.');
+      return;
+    }
+
     let role: 'customer' | 'driver' | 'merchant' = 'customer';
     if (type === 'driver') role = 'driver';
     if (type === 'merchant') role = 'merchant';
 
-    // Set a dummy user to bypass auth
-    setUser({
-      id: 'user-1',
-      name: name || 'New User',
-      email: email || 'user@example.com',
-      phone: '+1234567890',
-      role
-    });
-    
-    navigate('/home');
+    const driverProfile =
+      role === 'driver'
+        ? JSON.stringify({
+            driversLicense,
+            vehicleMake,
+            vehicleModel,
+            vehicleYear,
+            licensePlate,
+          })
+        : undefined;
+
+    const merchantProfile =
+      role === 'merchant'
+        ? JSON.stringify({kitchenName, kitchenAddress, cuisineType})
+        : undefined;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await signUp.email({
+        email,
+        password,
+        name,
+        role,
+        driverProfile,
+        merchantProfile,
+      } as Parameters<typeof signUp.email>[0]);
+
+      if (result.error) {
+        setError(result.error.message ?? 'Sign up failed');
+        return;
+      }
+
+      await refreshUserData();
+
+      if (role === 'driver') navigate('/driver/home');
+      else if (role === 'merchant') navigate('/merchant/dashboard');
+      else navigate('/home');
+    } catch {
+      setError('Sign up failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white flex flex-col px-6 py-8">
-      <button 
+      <button
         onClick={() => navigate(-1)}
         className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-900 mb-8"
       >
@@ -58,6 +99,10 @@ export const SignUp: React.FC = () => {
       <p className="text-gray-500 mb-8 leading-relaxed">
         Join us today and unlock endless possibilities. It's quick, easy, and just a step away!
       </p>
+
+      {error && (
+        <p className="mb-4 text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">{error}</p>
+      )}
 
       <form className="space-y-5 flex-1" onSubmit={handleSignUp}>
         <div>
@@ -87,6 +132,8 @@ export const SignUp: React.FC = () => {
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               className="w-full px-4 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
             />
@@ -103,9 +150,10 @@ export const SignUp: React.FC = () => {
         {type === 'driver' && (
           <div className="pt-6 mt-6 border-t border-gray-100 space-y-5">
             <h3 className="text-lg font-bold text-gray-900">Driver & Vehicle Details</h3>
-            
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">Driver's License Number</label>
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Driver's License Number
+              </label>
               <input
                 type="text"
                 value={driversLicense}
@@ -114,7 +162,6 @@ export const SignUp: React.FC = () => {
                 className="w-full px-4 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
               />
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-2">Vehicle Make</label>
@@ -127,7 +174,9 @@ export const SignUp: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">Vehicle Model</label>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Vehicle Model
+                </label>
                 <input
                   type="text"
                   value={vehicleModel}
@@ -137,7 +186,6 @@ export const SignUp: React.FC = () => {
                 />
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-2">Year</label>
@@ -166,7 +214,6 @@ export const SignUp: React.FC = () => {
         {type === 'merchant' && (
           <div className="pt-6 mt-6 border-t border-gray-100 space-y-5">
             <h3 className="text-lg font-bold text-gray-900">Kitchen Details</h3>
-            
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-2">Kitchen Name</label>
               <input
@@ -177,7 +224,6 @@ export const SignUp: React.FC = () => {
                 className="w-full px-4 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-2">Kitchen Address</label>
               <input
@@ -188,7 +234,6 @@ export const SignUp: React.FC = () => {
                 className="w-full px-4 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-2">Cuisine Type</label>
               <input
@@ -214,23 +259,29 @@ export const SignUp: React.FC = () => {
           </div>
           <div className="ml-3 text-sm">
             <label htmlFor="terms" className="font-medium text-gray-500">
-              By creating an account, you agree to our <a href="#" className="text-orange-500 hover:underline">Terms and Conditions</a> and <a href="#" className="text-orange-500 hover:underline">Privacy Notice</a>.
+              By creating an account, you agree to our Terms and Conditions and Privacy Notice.
             </label>
           </div>
         </div>
 
         <button
           type="submit"
-          disabled={!agreed}
+          disabled={!agreed || loading}
           className="w-full bg-orange-500 text-white py-4 rounded-full font-bold text-lg shadow-lg shadow-orange-500/30 mt-8 disabled:opacity-50 disabled:shadow-none transition-all"
         >
-          Sign Up
+          {loading ? 'Creating account...' : 'Sign Up'}
         </button>
       </form>
 
       <div className="mt-auto pt-8 text-center">
         <p className="text-gray-600">
-          Already have an account? <Link to="/login" className="text-orange-500 font-bold">Sign In</Link>
+          Already have an account?{' '}
+          <Link
+            to={type ? `/login?type=${type}` : '/login'}
+            className="text-orange-500 font-bold"
+          >
+            Sign In
+          </Link>
         </p>
       </div>
     </div>

@@ -1,14 +1,43 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Phone } from 'lucide-react';
+import React, {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {ArrowLeft, Mail} from 'lucide-react';
+import {requestPasswordReset} from '../../lib/auth-client';
 
 export const ForgotPassword: React.FC = () => {
   const navigate = useNavigate();
-  const [method, setMethod] = useState<'email' | 'phone'>('email');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setError('Please enter your email address.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setMessage('');
+
+    try {
+      await requestPasswordReset(email, `${window.location.origin}/new-password`);
+
+      setMessage(
+        'If email delivery is configured on the server, you will receive a reset link shortly. Without SMTP, password reset is not available — contact support or sign up again.',
+      );
+    } catch {
+      setError('Password reset is unavailable. Email (SMTP) must be configured on the server.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col px-6 py-8">
-      <button 
+      <button
+        type="button"
         onClick={() => navigate(-1)}
         className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-900 mb-8"
       >
@@ -16,60 +45,44 @@ export const ForgotPassword: React.FC = () => {
       </button>
 
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Forgot Password</h1>
-      <p className="text-gray-500 mb-8 leading-relaxed">
-        Select verification method and we will send verification code
+      <p className="text-gray-500 mb-4 leading-relaxed">
+        Enter your email and we will send a reset link if email delivery is enabled.
       </p>
 
-      <div className="space-y-4 flex-1">
-        <button
-          onClick={() => setMethod('email')}
-          className={`w-full flex items-center p-4 rounded-2xl border-2 transition-all ${
-            method === 'email' ? 'border-orange-500 bg-orange-50/30' : 'border-gray-200 bg-white'
-          }`}
-        >
-          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 mr-4">
-            <Mail size={24} />
-          </div>
-          <div className="flex-1 text-left">
-            <h3 className="font-semibold text-gray-900">Email</h3>
-            <p className="text-sm text-gray-500 mt-1">********@mail.com</p>
-          </div>
-          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-            method === 'email' ? 'border-orange-500' : 'border-gray-300'
-          }`}>
-            {method === 'email' && <div className="w-3 h-3 bg-orange-500 rounded-full" />}
-          </div>
-        </button>
-
-        <button
-          onClick={() => setMethod('phone')}
-          className={`w-full flex items-center p-4 rounded-2xl border-2 transition-all ${
-            method === 'phone' ? 'border-orange-500 bg-orange-50/30' : 'border-gray-200 bg-white'
-          }`}
-        >
-          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 mr-4">
-            <Phone size={24} />
-          </div>
-          <div className="flex-1 text-left">
-            <h3 className="font-semibold text-gray-900">Phone Number</h3>
-            <p className="text-sm text-gray-500 mt-1">**** **** **** 0101</p>
-          </div>
-          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-            method === 'phone' ? 'border-orange-500' : 'border-gray-300'
-          }`}>
-            {method === 'phone' && <div className="w-3 h-3 bg-orange-500 rounded-full" />}
-          </div>
-        </button>
+      <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-sm">
+        Password reset requires SMTP email on the backend. In local development, reset emails are not sent unless you configure mail settings.
       </div>
 
-      <div className="mt-auto pt-8">
+      {error && (
+        <p className="mb-4 text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">{error}</p>
+      )}
+      {message && (
+        <p className="mb-4 text-sm text-green-700 bg-green-50 px-4 py-3 rounded-xl">{message}</p>
+      )}
+
+      <form className="space-y-4 flex-1" onSubmit={handleSubmit}>
+        <div>
+          <label className="block text-sm font-medium text-gray-900 mb-2">Email</label>
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address"
+              className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+        </div>
+
         <button
-          onClick={() => navigate('/verify-code')}
-          className="w-full bg-orange-500 text-white py-4 rounded-full font-bold text-lg shadow-lg shadow-orange-500/30"
+          type="submit"
+          disabled={loading}
+          className="w-full bg-orange-500 text-white py-4 rounded-full font-bold text-lg shadow-lg shadow-orange-500/30 disabled:opacity-50"
         >
-          Continue
+          {loading ? 'Sending...' : 'Send Reset Link'}
         </button>
-      </div>
+      </form>
     </div>
   );
 };

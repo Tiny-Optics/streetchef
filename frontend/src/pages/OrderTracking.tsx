@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Phone, MessageSquare, ClipboardCheck, Coffee, Bike, Star } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import { api } from '../lib/api';
 import { motion } from 'motion/react';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -11,28 +12,39 @@ export const OrderTracking: React.FC = () => {
   const { orders } = useAppContext();
   const activeOrder = orders[0];
 
-  const [currentStep, setCurrentStep] = useState(0);
+  const statusToStep = (status?: string) => {
+    switch (status) {
+      case 'preparing':
+        return 0;
+      case 'delivering':
+        return 2;
+      case 'arrived':
+        return 3;
+      case 'completed':
+        return 3;
+      default:
+        return 0;
+    }
+  };
+
+  const [currentStep, setCurrentStep] = useState(statusToStep(activeOrder?.status));
 
   useEffect(() => {
-    // Variable timing for a more realistic feel
-    const timings = [3000, 4000, 8000, 2000]; // Placed -> Preparing -> Delivering -> Arrived
-    
-    let timer: NodeJS.Timeout;
-    
-    const advanceStep = () => {
-      setCurrentStep((prev) => {
-        if (prev < 3) {
-          timer = setTimeout(advanceStep, timings[prev + 1]);
-          return prev + 1;
-        }
-        return prev;
-      });
+    if (!activeOrder?.id) return;
+
+    const poll = async () => {
+      try {
+        const order = await api.orders.get(activeOrder.id);
+        setCurrentStep(statusToStep(order.status));
+      } catch {
+        // keep last known step
+      }
     };
 
-    timer = setTimeout(advanceStep, timings[0]);
-
-    return () => clearTimeout(timer);
-  }, []);
+    poll();
+    const id = setInterval(poll, 4000);
+    return () => clearInterval(id);
+  }, [activeOrder?.id, activeOrder?.status]);
 
   // Map Path Points (Pixel coordinates for the SVG overlay)
   const pathPoints = [

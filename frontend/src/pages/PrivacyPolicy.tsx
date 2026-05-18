@@ -1,9 +1,19 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { api } from '../lib/api';
 
 export const PrivacyPolicy: React.FC = () => {
   const navigate = useNavigate();
+  const [content, setContent] = useState<{
+    title: string;
+    effectiveDate: string;
+    sections: {title: string; body: string}[];
+  } | null>(null);
+
+  useEffect(() => {
+    api.content.legal().then(setContent).catch(() => setContent(null));
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -14,7 +24,7 @@ export const PrivacyPolicy: React.FC = () => {
         >
           <ArrowLeft size={24} />
         </button>
-        <h1 className="text-xl font-bold text-gray-900 flex-1 text-center pr-16">Privacy & Policy</h1>
+        <h1 className="text-xl font-bold text-gray-900 flex-1 text-center pr-16">{content?.title ?? 'Privacy & Policy'}</h1>
       </div>
 
       <div className="px-6 pb-12 relative flex-1">
@@ -23,36 +33,17 @@ export const PrivacyPolicy: React.FC = () => {
           <div className="w-full h-32 bg-orange-500 rounded-full absolute top-1/4"></div>
         </div>
 
-        <h2 className="text-xl font-bold text-gray-900 mb-6 pr-4">Effective Date: January 2025</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-6 pr-4">
+          Effective Date: {content?.effectiveDate ?? 'January 2025'}
+        </h2>
 
         <div className="space-y-6 pr-4">
-          <section>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">1. Information Collection</h3>
-            <p className="text-gray-500 leading-relaxed">
-              We collect essential information to enhance your experience. This includes details you provide directly, such as account data, as well as information gathered through usage analytics and cookies.
-            </p>
-          </section>
-
-          <section>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">2. Information Usage</h3>
-            <p className="text-gray-500 leading-relaxed">
-              The information collected is used to improve our services, provide personalized recommendations, and ensure a seamless experience. We do not share your data without your explicit consent.
-            </p>
-          </section>
-
-          <section>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">3. Information Setting</h3>
-            <p className="text-gray-500 leading-relaxed">
-              You have full control over your data. Manage your privacy preferences, update personal details, and customize your settings to match your needs.
-            </p>
-          </section>
-
-          <section>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">4. Security Measures</h3>
-            <p className="text-gray-500 leading-relaxed">
-              We prioritize your data's safety with advanced security protocols, encryption methods, and regular audits to protect against unauthorized access or breaches.
-            </p>
-          </section>
+          {(content?.sections ?? []).map((section) => (
+            <section key={section.title}>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">{section.title}</h3>
+              <p className="text-gray-500 leading-relaxed">{section.body}</p>
+            </section>
+          ))}
         </div>
       </div>
     </div>

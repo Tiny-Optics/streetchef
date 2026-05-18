@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Menu, Bell, Navigation, User, Wallet, HelpCircle, FileText, ChevronRight, X, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import L from 'leaflet';
 import { useNavigate } from 'react-router-dom';
+import { useAppContext } from '../../context/AppContext';
+import { api, type DriverOrderOffer } from '../../lib/api';
 
 // Custom marker icon for driver
 const driverIcon = new L.Icon({
@@ -27,49 +29,79 @@ const locationIcon = new L.Icon({
 
 export const DriverHome: React.FC = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAppContext();
   const [isOnline, setIsOnline] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [incomingOrder, setIncomingOrder] = useState<{
-    id: string;
-    restaurant: string;
-    pickup: string;
-    dropoff: string;
-    distance: string;
-    time: string;
-    earnings: number;
-    rating: number;
-  } | null>(null);
+  const [incomingOrder, setIncomingOrder] = useState<DriverOrderOffer | null>(null);
+  const [activeOrder, setActiveOrder] = useState<DriverOrderOffer | null>(null);
+  const [todayEarnings, setTodayEarnings] = useState(0);
 
   // Coordinates for Cape Town, South Africa
   const center: [number, number] = [-33.9249, 18.4241];
 
-  // Simulate incoming order when going online
+  const loadEarnings = useCallback(() => {
+    api.driver.earnings().then((e) => setTodayEarnings(e.todayEarnings)).catch(() => {});
+  }, []);
+
+  const pollAvailable = useCallback(async () => {
+    if (!isOnline || activeOrder) return;
+    try {
+      const [available, active] = await Promise.all([
+        api.driver.available(),
+        api.driver.active(),
+      ]);
+      if (active) {
+        setActiveOrder(active);
+        setIncomingOrder(null);
+      } else if (available.length > 0 && !incomingOrder) {
+        setIncomingOrder(available[0]);
+      }
+    } catch {
+      // ignore poll errors
+    }
+  }, [isOnline, activeOrder, incomingOrder]);
+
+  useEffect(() => {
+    loadEarnings();
+    api.driver.active().then(setActiveOrder).catch(() => {});
+  }, [loadEarnings]);
+
+  useEffect(() => {
+    if (!isOnline) return;
+    pollAvailable();
+    const id = setInterval(pollAvailable, 5000);
+    return () => clearInterval(id);
+  }, [isOnline, pollAvailable]);
+
   const toggleOnline = () => {
     const newStatus = !isOnline;
     setIsOnline(newStatus);
-    
-    if (newStatus) {
-      setTimeout(() => {
-        setIncomingOrder({
-          id: 'ORD-123',
-          restaurant: 'Burger Joint',
-          pickup: '12 Kloof St, Gardens',
-          dropoff: '45 Strand St, Cape Town City Centre',
-          distance: '2.5 km',
-          time: '15 min',
-          earnings: 45.50,
-          rating: 4.8
-        });
-      }, 3000);
-    } else {
+    if (!newStatus) {
       setIncomingOrder(null);
     }
   };
 
-  const acceptOrder = () => {
-    // Handle order acceptance logic here
-    setIncomingOrder(null);
-    // Navigate to active delivery screen or update state
+  const acceptOrder = async () => {
+    if (!incomingOrder) return;
+    try {
+      const accepted = await api.driver.accept(incomingOrder.id);
+      setActiveOrder(accepted);
+      setIncomingOrder(null);
+    } catch {
+      alert('Could not accept order. It may have been taken.');
+      setIncomingOrder(null);
+    }
+  };
+
+  const completeDelivery = async () => {
+    if (!activeOrder) return;
+    try {
+      await api.driver.updateStatus(activeOrder.id, 'completed');
+      setActiveOrder(null);
+      loadEarnings();
+    } catch {
+      alert('Failed to update delivery status.');
+    }
   };
 
   const declineOrder = () => {
@@ -118,7 +150,7 @@ export const DriverHome: React.FC = () => {
         
         <div className="flex flex-col items-center pointer-events-auto">
           <div className="bg-white rounded-full shadow-lg px-6 py-3 flex items-center space-x-2">
-            <span className="font-bold text-lg text-gray-900">R 0.00</span>
+            <span className="font-bold text-lg text-gray-900">R {todayEarnings.toFixed(2)}</span>
           </div>
           <span className="text-xs font-medium text-gray-800 bg-white/80 px-2 py-1 rounded-full mt-2 shadow-sm backdrop-blur-sm">
             Today's Earnings
@@ -160,9 +192,23 @@ export const DriverHome: React.FC = () => {
         </div>
       </div>
 
+      {activeOrder && (
+        <div className="absolute bottom-32 left-4 right-4 z-20 bg-white rounded-2xl shadow-xl p-4 pointer-events-auto">
+          <p className="font-bold text-gray-900 mb-1">Active delivery — {activeOrder.id}</p>
+          <p className="text-sm text-gray-500 mb-3">{activeOrder.items}</p>
+          <button
+            type="button"
+            onClick={completeDelivery}
+            className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold"
+          >
+            Mark Delivered
+          </button>
+        </div>
+      )}
+
       {/* Incoming Order Modal */}
       <AnimatePresence>
-        {incomingOrder && (
+        {incomingOrder && !activeOrder && (
           <motion.div 
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
@@ -245,7 +291,7 @@ export const DriverHome: React.FC = () => {
                     <X size={24} />
                   </button>
                 </div>
-                <h2 className="text-2xl font-bold">Ashley Idas</h2>
+                <h2 className="text-2xl font-bold">{user?.name ?? 'Driver'}</h2>
                 <div className="flex items-center mt-2 text-sm text-gray-300">
                   <span className="flex items-center"><span className="text-yellow-400 mr-1">★</span> 4.9</span>
                   <span className="mx-2">•</span>
@@ -298,9 +344,9 @@ export const DriverHome: React.FC = () => {
 
               <div className="p-6 border-t border-gray-100">
                 <button 
-                  onClick={() => {
-                    // Handle logout
-                    navigate('/');
+                  onClick={async () => {
+                    await logout();
+                    navigate('/welcome');
                   }}
                   className="w-full py-3 text-red-500 font-bold text-lg hover:bg-red-50 rounded-xl transition-colors"
                 >

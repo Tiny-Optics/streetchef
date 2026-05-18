@@ -1,9 +1,20 @@
-import React from 'react';
-import { ChevronLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-
+import React, {useEffect, useState} from 'react';
+import {ChevronLeft, Heart} from 'lucide-react';
+import {Link, useNavigate} from 'react-router-dom';
+import {api} from '../lib/api';
+import type {MenuItem} from '../data/menu';
 export const Favorites: React.FC = () => {
   const navigate = useNavigate();
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.favorites
+      .list()
+      .then(setItems)
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="flex flex-col min-h-full bg-gray-50 pb-24">
@@ -13,17 +24,40 @@ export const Favorites: React.FC = () => {
         </button>
         <h1 className="text-xl font-bold text-gray-900">Favorites</h1>
       </div>
-      <div className="p-4 flex flex-col items-center justify-center flex-1 mt-20">
-        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-          </svg>
+
+      {loading ? (
+        <p className="text-center text-gray-500 mt-20">Loading...</p>
+      ) : items.length === 0 ? (
+        <div className="p-4 flex flex-col items-center justify-center flex-1 mt-20">
+          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Heart size={40} className="text-gray-400" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">No Favorites Yet</h2>
+          <p className="text-gray-500 text-center max-w-xs">
+            Hit the heart icon on your favorite items to save them here.
+          </p>
+          <Link to="/menu" className="mt-6 text-orange-500 font-semibold">
+            Browse Menu
+          </Link>
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">No Favorites Yet</h2>
-        <p className="text-gray-500 text-center max-w-xs">
-          Hit the heart icon on your favorite items to save them here.
-        </p>
-      </div>
+      ) : (
+        <div className="p-4 space-y-4">
+          {items.map((item) => (
+            <Link
+              key={item.id}
+              to={`/item/${item.id}`}
+              className="flex bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+            >
+              <img src={item.image} alt={item.name} className="w-24 h-24 object-cover" />
+              <div className="p-3 flex-1">
+                <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                <p className="text-sm text-gray-500">{item.category}</p>
+                <p className="font-bold text-gray-900 mt-1">R{item.price.toFixed(2)}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

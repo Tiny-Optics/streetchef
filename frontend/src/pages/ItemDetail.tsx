@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Heart, Star, Clock, Minus, Plus, ShoppingCart } from 'lucide-react';
-import { menuItems } from '../data/menu';
+import { useMenuItem } from '../hooks/useMenu';
 import { useAppContext } from '../context/AppContext';
 
 export const ItemDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addToCart } = useAppContext();
-  
-  const item = menuItems.find(i => i.id === id);
+  const { addToCart, favoriteIds, toggleFavorite } = useAppContext();
+  const { item, loading } = useMenuItem(id);
   const [quantity, setQuantity] = useState(1);
+
+  if (loading) {
+    return <div className="p-6 text-center">Loading...</div>;
+  }
 
   if (!item) {
     return <div className="p-6 text-center">Item not found</div>;
@@ -42,8 +45,14 @@ export const ItemDetail: React.FC = () => {
             <ArrowLeft size={24} />
           </button>
           <span className="text-white font-bold text-lg">Menu Detail</span>
-          <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-900 shadow-sm">
-            <Heart size={24} />
+          <button
+            type="button"
+            onClick={() => toggleFavorite(item.id)}
+            className={`w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm ${
+              favoriteIds.has(item.id) ? 'text-red-500' : 'text-gray-900'
+            }`}
+          >
+            <Heart size={24} fill={favoriteIds.has(item.id) ? 'currentColor' : 'none'} />
           </button>
         </div>
 

@@ -1,39 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, ChevronRight, ChevronUp, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { api } from '../lib/api';
 
 export const HelpSupport: React.FC = () => {
   const navigate = useNavigate();
-  const [expandedId, setExpandedId] = useState<number | null>(1); // Default expand the second item
+  const [expandedId, setExpandedId] = useState<number | null>(1);
+  const [faqs, setFaqs] = useState<{id: number; question: string; answer: string}[]>([]);
+  const [search, setSearch] = useState('');
 
-  const faqs = [
-    { 
-      id: 0,
-      question: 'How do I reset my password?',
-      answer: 'To reset your password, go to the login screen and tap on "Forgot Password". Follow the instructions sent to your email.'
-    },
-    { 
-      id: 1,
-      question: 'How do I contact support?',
-      answer: 'You can reach our support team via the "Contact Us" option available in the app.'
-    },
-    { 
-      id: 2,
-      question: 'How can I update my information?',
-      answer: 'Go to Profile > Edit Profile to update your personal information.'
-    },
-    { 
-      id: 3,
-      question: 'How do I report an issue?',
-      answer: 'You can report an issue directly from the order details page or contact support.'
-    },
-    { 
-      id: 4,
-      question: 'How do I manage notifications?',
-      answer: 'Go to Profile > Notifications to manage your notification preferences.'
-    },
-  ];
+  useEffect(() => {
+    api.content.help().then(setFaqs).catch(() => setFaqs([]));
+  }, []);
+
+  const filteredFaqs = faqs.filter(
+    (f) =>
+      !search ||
+      f.question.toLowerCase().includes(search.toLowerCase()) ||
+      f.answer.toLowerCase().includes(search.toLowerCase()),
+  );
 
   const toggleExpand = (id: number) => {
     setExpandedId(expandedId === id ? null : id);
@@ -57,7 +43,9 @@ export const HelpSupport: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input 
               type="text" 
-              placeholder="Search location.."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search help topics.."
               className="w-full bg-transparent pl-10 pr-4 py-3 focus:outline-none text-gray-900 placeholder:text-gray-400"
             />
           </div>
@@ -68,7 +56,7 @@ export const HelpSupport: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-          {faqs.map((faq) => {
+          {filteredFaqs.map((faq) => {
             const isExpanded = expandedId === faq.id;
             return (
               <div 

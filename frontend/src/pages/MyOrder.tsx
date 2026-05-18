@@ -48,9 +48,20 @@ export const MyOrder: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <div className="border-t border-gray-100 pt-3 flex justify-between items-center">
+              <div className="border-t border-gray-100 pt-3 flex justify-between items-center gap-3">
                 <span className="text-sm font-medium capitalize text-orange-500">{order.status}</span>
-                <span className="font-bold text-gray-900">Total: R{order.total.toFixed(2)}</span>
+                <div className="flex items-center gap-3">
+                  {order.status !== 'completed' && (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/tracking')}
+                      className="text-sm font-medium text-orange-500"
+                    >
+                      Track
+                    </button>
+                  )}
+                  <span className="font-bold text-gray-900">Total: R{order.total.toFixed(2)}</span>
+                </div>
               </div>
             </div>
           ))}

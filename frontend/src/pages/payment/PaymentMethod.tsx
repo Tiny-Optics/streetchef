@@ -6,6 +6,12 @@ export const PaymentMethod: React.FC = () => {
   const navigate = useNavigate();
   const [selectedMethod, setSelectedMethod] = useState<string | null>('mastercard');
 
+  const paymentDisabledNotice = (
+    <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-sm">
+      Online payment is not enabled in this build. Orders use pay-on-delivery. Card selection is for display only.
+    </div>
+  );
+
   const paymentMethods = [
     {
       id: 'paypal',
@@ -67,6 +73,8 @@ export const PaymentMethod: React.FC = () => {
         <h1 className="text-xl font-bold text-gray-900 flex-1 text-center pr-16">Payment Methods</h1>
       </div>
 
+      {paymentDisabledNotice}
+
       <div className="space-y-4 flex-1">
         {paymentMethods.map((method) => (
           <div
@@ -90,11 +98,12 @@ export const PaymentMethod: React.FC = () => {
           </div>
         ))}
 
-        <button 
-          onClick={() => navigate('/payment-info')}
-          className="w-full py-4 rounded-2xl border border-gray-300 flex items-center justify-center text-gray-900 font-semibold mt-4"
+        <button
+          type="button"
+          disabled
+          className="w-full py-4 rounded-2xl border border-gray-200 flex items-center justify-center text-gray-400 font-semibold mt-4 cursor-not-allowed"
         >
-          <span className="mr-2 text-xl">+</span> Add New Card
+          <span className="mr-2 text-xl">+</span> Add New Card (unavailable)
         </button>
       </div>
 

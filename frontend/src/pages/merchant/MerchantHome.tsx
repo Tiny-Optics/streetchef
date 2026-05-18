@@ -1,13 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, Bell, TrendingUp, ShoppingBag, DollarSign, Clock, X, CheckCircle2, ChevronRight, FileText, User, Wallet, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppContext } from '../../context/AppContext';
+import { api } from '../../lib/api';
 
 export const MerchantHome: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAppContext();
+  const { user, logout } = useAppContext();
   const [showMenu, setShowMenu] = useState(false);
+  const [dashboard, setDashboard] = useState<{
+    todaySales: number;
+    orderCount: number;
+    activeOrders: {id: string; items: string; time: string; status: string}[];
+  } | null>(null);
+
+  useEffect(() => {
+    api.merchant.dashboard().then(setDashboard).catch(() => setDashboard(null));
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -44,14 +54,14 @@ export const MerchantHome: React.FC = () => {
               <DollarSign size={20} className="text-white" />
             </div>
             <p className="text-orange-100 text-sm mb-1">Today's Sales</p>
-            <p className="text-2xl font-bold">R 1,587</p>
+            <p className="text-2xl font-bold">R {(dashboard?.todaySales ?? 0).toLocaleString()}</p>
           </div>
           <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm">
             <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mb-3">
               <ShoppingBag size={20} className="text-orange-500" />
             </div>
             <p className="text-gray-500 text-sm mb-1">Orders</p>
-            <p className="text-2xl font-bold text-gray-900">24</p>
+            <p className="text-2xl font-bold text-gray-900">{dashboard?.orderCount ?? 0}</p>
           </div>
         </div>
 
@@ -59,13 +69,16 @@ export const MerchantHome: React.FC = () => {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-bold text-gray-900">Active Orders</h2>
-            <button className="text-orange-500 font-medium text-sm hover:underline">View All</button>
+            <button
+              type="button"
+              onClick={() => navigate('/merchant/orders')}
+              className="text-orange-500 font-medium text-sm hover:underline"
+            >
+              View All
+            </button>
           </div>
           <div className="space-y-4">
-            {[
-              { id: '#1042', items: '2x Chicken Burger, 1x Fries', time: '5 min ago', status: 'Preparing' },
-              { id: '#1043', items: '1x Malva Pudding', time: 'Just now', status: 'New' },
-            ].map((order, i) => (
+            {(dashboard?.activeOrders ?? []).map((order, i) => (
               <div key={i} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
                 <div>
                   <div className="flex items-center mb-1">
@@ -197,8 +210,9 @@ export const MerchantHome: React.FC = () => {
 
               <div className="p-6 border-t border-gray-100">
                 <button 
-                  onClick={() => {
-                    navigate('/');
+                  onClick={async () => {
+                    await logout();
+                    navigate('/welcome');
                   }}
                   className="w-full py-3 text-red-500 font-bold text-lg hover:bg-red-50 rounded-xl transition-colors"
                 >

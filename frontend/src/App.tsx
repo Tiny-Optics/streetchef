@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { Layout } from './components/Layout';
@@ -47,11 +47,35 @@ import { MerchantOrders } from './pages/merchant/MerchantOrders';
 import { MerchantMenu } from './pages/merchant/MerchantMenu';
 
 const ProtectedRoute = () => {
-  const { user } = useAppContext();
+  const { user, authLoading } = useAppContext();
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
   if (!user) {
     return <Navigate to="/welcome" replace />;
   }
   return <Outlet />;
+};
+
+const AuthEntry = () => {
+  const { user, authLoading } = useAppContext();
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
+  if (user) {
+    if (user.role === 'driver') return <Navigate to="/driver/home" replace />;
+    if (user.role === 'merchant') return <Navigate to="/merchant/dashboard" replace />;
+    return <Navigate to="/home" replace />;
+  }
+  return <Welcome />;
 };
 
 const HomeRoute = () => {
@@ -65,16 +89,32 @@ const HomeRoute = () => {
   return <Home />;
 };
 
+const ONBOARDING_KEY = 'streetchef_onboarding_complete';
+
 const AppContent = () => {
+  const onboardingDone = localStorage.getItem(ONBOARDING_KEY) === 'true';
+
   return (
     <Router>
       <Routes>
         {/* Public Landing Pages */}
         <Route path="/" element={<PartnerLanding />} />
         <Route path="/partner" element={<Navigate to="/" replace />} />
+        <Route
+          path="/onboarding"
+          element={
+            <Onboarding
+              onComplete={() => {
+                localStorage.setItem(ONBOARDING_KEY, 'true');
+                window.location.href = '/welcome';
+              }}
+            />
+          }
+        />
+        {!onboardingDone && <Route path="/splash" element={<Navigate to="/onboarding" replace />} />}
         
         {/* Auth Routes */}
-        <Route path="/welcome" element={<Welcome />} />
+        <Route path="/welcome" element={<AuthEntry />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

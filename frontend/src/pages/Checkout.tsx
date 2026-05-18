@@ -5,6 +5,7 @@ import { useAppContext } from '../context/AppContext';
 
 export const Checkout: React.FC = () => {
   const { cart, addresses, clearCart, addOrder, updateQuantity } = useAppContext();
+  const defaultAddress = addresses.find((a) => a.isDefault) ?? addresses[0];
   const navigate = useNavigate();
   const [selectedItem, setSelectedItem] = useState(cart[0]?.id);
 
@@ -13,17 +14,23 @@ export const Checkout: React.FC = () => {
   const discount = 0;
   const total = subtotal + tax - discount;
 
-  const handlePlaceOrder = () => {
-    const newOrder = {
-      id: `ORD-${Math.floor(Math.random() * 10000)}`,
-      date: new Date().toISOString(),
-      status: 'preparing' as const,
-      total,
-      items: [...cart]
-    };
-    addOrder(newOrder);
-    clearCart();
-    navigate('/order-success');
+  const [placing, setPlacing] = useState(false);
+
+  const handlePlaceOrder = async () => {
+    setPlacing(true);
+    try {
+      await addOrder({
+        status: 'preparing',
+        total,
+        items: [...cart],
+      });
+      clearCart();
+      navigate('/order-success');
+    } catch {
+      alert('Failed to place order. Please try again.');
+    } finally {
+      setPlacing(false);
+    }
   };
 
   return (
@@ -90,8 +97,8 @@ export const Checkout: React.FC = () => {
             <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=200" alt="Map" className="w-full h-full object-cover opacity-50 grayscale" />
           </div>
           <div>
-            <h4 className="font-semibold text-gray-900 text-lg">Home</h4>
-            <p className="text-gray-500 text-sm">12 Long Street, Cape Town</p>
+            <h4 className="font-semibold text-gray-900 text-lg">{defaultAddress?.title ?? 'Add address'}</h4>
+            <p className="text-gray-500 text-sm">{defaultAddress?.address ?? 'Select a delivery address'}</p>
           </div>
         </div>
       </div>
@@ -121,10 +128,10 @@ export const Checkout: React.FC = () => {
 
         <button 
           onClick={handlePlaceOrder}
-          disabled={cart.length === 0}
+          disabled={cart.length === 0 || placing}
           className="w-full bg-orange-500 text-white py-4 rounded-full font-bold text-lg shadow-lg shadow-orange-500/30 disabled:opacity-50"
         >
-          Proceed To Checkout
+          {placing ? 'Placing order...' : 'Place Order (pay on delivery)'}
         </button>
       </div>
     </div>

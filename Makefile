@@ -1,4 +1,6 @@
-COMPOSE := docker compose
+# Local mongo container (profile `local`). For Atlas, run: COMPOSE_PROFILES= make build
+COMPOSE_PROFILES ?= local
+COMPOSE := COMPOSE_PROFILES=$(COMPOSE_PROFILES) docker compose
 
 .PHONY: up build down restart restart-build logs ps clean help
 
@@ -33,6 +35,7 @@ help:
 	@echo "make build         - start backend + frontend with rebuild"
 	@echo "make restart       - stop and start (no rebuild)"
 	@echo "make restart-build - stop and start with rebuild"
+	@echo "COMPOSE_PROFILES=  - omit local mongo (use MONGODB_URI Atlas in backend/.env)"
 	@echo "make down          - stop and remove containers"
 	@echo "make logs          - tail logs from all services"
 	@echo "make clean         - down + remove volumes (wipes node_modules caches)"

@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, Star, Plus, ArrowLeft, SlidersHorizontal, X, Heart, Clock } from 'lucide-react';
-import { menuItems, categories } from '../data/menu';
+import { categories } from '../data/menu';
+import { useMenu } from '../hooks/useMenu';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppContext } from '../context/AppContext';
 
@@ -15,9 +16,26 @@ export const Menu: React.FC = () => {
   const [recentSearches, setRecentSearches] = useState(['Pizza', 'Burger', 'Pastry', 'Cookies', 'Meat Church']);
   
   const { addToCart } = useAppContext();
+  const { items: menuItems } = useMenu();
 
-  const hotDeals = menuItems.filter(item => item.popular).slice(0, 2);
-  const recommended = menuItems.filter(item => !item.popular).slice(0, 3);
+  const matchesSearch = (item: (typeof menuItems)[0]) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      item.name.toLowerCase().includes(q) ||
+      item.description.toLowerCase().includes(q) ||
+      item.category.toLowerCase().includes(q)
+    );
+  };
+
+  const searchResults = useMemo(
+    () => menuItems.filter(matchesSearch),
+    [menuItems, searchQuery],
+  );
+
+  const hotDeals = menuItems.filter((item) => item.popular && matchesSearch(item)).slice(0, 2);
+  const recommended = menuItems.filter((item) => !item.popular && matchesSearch(item)).slice(0, 3);
+  const isSearching = searchQuery.trim().length > 0;
 
   const handleRemoveRecent = (search: string) => {
     setRecentSearches(recentSearches.filter(s => s !== search));
@@ -94,6 +112,48 @@ export const Menu: React.FC = () => {
         </div>
       </div>
 
+      {isSearching ? (
+        <div className="mt-8 px-4">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Results ({searchResults.length})</h3>
+          {searchResults.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">No items match your search.</p>
+          ) : (
+            <motion.div className="space-y-4">
+              {searchResults.map((item, index) => (
+                <motion.div
+                  key={item.id}
+                  initial={{opacity: 0, y: 20}}
+                  animate={{opacity: 1, y: 0}}
+                  transition={{delay: index * 0.05}}
+                >
+                  <Link
+                    to={`/item/${item.id}`}
+                    className="bg-white rounded-2xl p-3 flex border border-gray-100 shadow-sm"
+                  >
+                    <img src={item.image} alt={item.name} className="w-24 h-24 rounded-xl object-cover" />
+                    <div className="ml-4 flex-1 flex flex-col justify-between py-1">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 line-clamp-1">{item.name}</h4>
+                        <p className="text-sm text-gray-500">{item.category}</p>
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="font-bold text-gray-900">R{item.price.toFixed(2)}</span>
+                        <button
+                          onClick={(e) => handleAddToCart(e, item)}
+                          className="bg-orange-500 text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center"
+                        >
+                          <Plus size={16} className="mr-1" /> Add
+                        </button>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </div>
+      ) : (
+        <>
       <div className="mt-8 px-4">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-bold text-gray-900">Hot Deals 🔥</h3>
@@ -182,6 +242,8 @@ export const Menu: React.FC = () => {
           ))}
         </div>
       </div>
+        </>
+      )}
 
       {/* Filter Bottom Sheet */}
       <AnimatePresence>

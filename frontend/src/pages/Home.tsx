@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Star, Heart } from 'lucide-react';
-import { menuItems } from '../data/menu';
+import { useMenu } from '../hooks/useMenu';
 import { motion } from 'motion/react';
 
 const categoryIcons: Record<string, string> = {
@@ -17,6 +17,7 @@ const categoryIcons: Record<string, string> = {
 };
 
 export const Home: React.FC = () => {
+  const { items: menuItems } = useMenu();
   const popularItems = menuItems.filter(item => item.popular);
   const newItems = menuItems.slice(5, 10);
   const allItems = menuItems;

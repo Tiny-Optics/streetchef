@@ -1,15 +1,36 @@
 services:
+  mongo:
+    profiles: [local]
+    image: mongo:7
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   backend:
     build:
       context: ./backend
     ports:
       - "4000:4000"
+    env_file:
+      - ./backend/.env
     environment:
       PORT: "4000"
       NODE_ENV: development
+      # Browser-facing URLs (host port mappings); keep localhost, not service names
+      FRONTEND_URL: http://localhost:3000
+      BETTER_AUTH_URL: http://localhost:4000
     volumes:
       - ./backend:/app
       - backend_node_modules:/app/node_modules
+    depends_on:
+      mongo:
+        condition: service_healthy
+        required: false
     command: npm run dev
 
   frontend:
@@ -27,5 +48,6 @@ services:
     command: npm run dev
 
 volumes:
+  mongo_data:
   backend_node_modules:
   frontend_node_modules:

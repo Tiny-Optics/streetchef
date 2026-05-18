@@ -23,6 +23,9 @@ export const DriverPayment: React.FC = () => {
       </div>
 
       <div className="p-6 flex-1 overflow-y-auto">
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-sm">
+          Payout and card management are not enabled. Earnings are view-only.
+        </div>
         <h3 className="text-lg font-bold text-gray-900 mb-4 px-2">Payout Methods</h3>
         
         <div className="space-y-4 mb-8">

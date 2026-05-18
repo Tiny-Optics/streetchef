@@ -53,10 +53,12 @@ export const VerifyCode: React.FC = () => {
         </button>
 
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Verify Code</h1>
-        <p className="text-gray-500 mb-8 leading-relaxed">
-          Please enter the code we just sent to your number<br/>
-          +27 82 555 0101
+        <p className="text-gray-500 mb-4 leading-relaxed">
+          Phone verification is not enabled. Use email password reset instead.
         </p>
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-sm">
+          SMS OTP requires a provider that is not configured. Go back and use Forgot Password with your email.
+        </div>
 
         <div className="flex justify-between gap-4 mb-8">
           {code.map((digit, index) => (

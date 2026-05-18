@@ -1,17 +1,46 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { resetPasswordWithToken } from '../../lib/auth-client';
 
 export const NewPassword: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token') ?? '';
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [showPassword1, setShowPassword1] = useState(false);
   const [showPassword2, setShowPassword2] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleCreatePassword = (e: React.FormEvent) => {
+  const handleCreatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowSuccessModal(true);
+    if (!token) {
+      setError('Missing reset token. Use the link from your email or request a new reset.');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+    if (password !== confirm) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      await resetPasswordWithToken(password, token);
+      setShowSuccessModal(true);
+    } catch {
+      setError('Failed to reset password. The link may have expired.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -24,9 +53,15 @@ export const NewPassword: React.FC = () => {
       </button>
 
       <h1 className="text-3xl font-bold text-gray-900 mb-2">New Password</h1>
-      <p className="text-gray-500 mb-8 leading-relaxed">
+      <p className="text-gray-500 mb-4 leading-relaxed">
         Create a new password that is safe and easy to remember
       </p>
+      {!token && (
+        <p className="mb-4 text-sm text-amber-700 bg-amber-50 px-4 py-3 rounded-xl">
+          Open this page from the password reset email link. Without a token, reset is not available.
+        </p>
+      )}
+      {error && <p className="mb-4 text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">{error}</p>}
 
       <form className="space-y-5 flex-1" onSubmit={handleCreatePassword}>
         <div>
@@ -34,6 +69,8 @@ export const NewPassword: React.FC = () => {
           <div className="relative">
             <input
               type={showPassword1 ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter new password"
               className="w-full px-4 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
             />
@@ -52,6 +89,8 @@ export const NewPassword: React.FC = () => {
           <div className="relative">
             <input
               type={showPassword2 ? 'text' : 'password'}
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
               placeholder="Confirm new password"
               className="w-full px-4 py-4 bg-white border border-orange-500 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
             />
@@ -68,9 +107,10 @@ export const NewPassword: React.FC = () => {
         <div className="mt-auto pt-8 absolute bottom-8 left-6 right-6">
           <button
             type="submit"
-            className="w-full bg-orange-500 text-white py-4 rounded-full font-bold text-lg shadow-lg shadow-orange-500/30"
+            disabled={loading || !token}
+            className="w-full bg-orange-500 text-white py-4 rounded-full font-bold text-lg shadow-lg shadow-orange-500/30 disabled:opacity-50"
           >
-            Create New Password
+            {loading ? 'Updating...' : 'Create New Password'}
           </button>
         </div>
       </form>

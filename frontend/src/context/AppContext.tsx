@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {createContext, useContext, useState, useEffect, ReactNode, useCallback} from 'react';
+import {useSession, signOut} from '../lib/auth-client';
+import {api, mapSessionUser} from '../lib/api';
 
 export type User = {
   id: string;
@@ -44,60 +46,92 @@ export type Order = {
 interface AppContextType {
   user: User | null;
   setUser: (user: User | null) => void;
+  authLoading: boolean;
+  logout: () => Promise<void>;
+  refreshUserData: () => Promise<void>;
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   addresses: Address[];
-  addAddress: (address: Address) => void;
+  addAddress: (address: Omit<Address, 'id'>) => Promise<void>;
   paymentMethods: PaymentMethod[];
-  addPaymentMethod: (method: PaymentMethod) => void;
   orders: Order[];
-  addOrder: (order: Order) => void;
-  updateOrderStatus: (id: string, status: Order['status']) => void;
+  addOrder: (order: Omit<Order, 'id' | 'date'>) => Promise<Order>;
+  updateOrderStatus: (id: string, status: Order['status']) => Promise<void>;
+  favoriteIds: Set<string>;
+  toggleFavorite: (menuItemId: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUserState] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-  
+export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
+  const {data: session, isPending: authLoading} = useSession();
+  const [user, setUserState] = useState<User | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [addresses, setAddresses] = useState<Address[]>([
-    { id: '1', title: 'Home', address: '12 Long Street, Cape Town, 8001', isDefault: true },
-    { id: '2', title: 'Work', address: '1 Sandton Drive, Sandton, Johannesburg, 2196', isDefault: false },
-  ]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
-    { id: '1', type: 'card', brand: 'mastercard', last4: '4242', isDefault: true },
-    { id: '2', type: 'paypal', isDefault: false },
-  ]);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [paymentMethods] = useState<PaymentMethod[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
 
   const setUser = (newUser: User | null) => {
     setUserState(newUser);
-    if (newUser) {
-      localStorage.setItem('user', JSON.stringify(newUser));
-    } else {
-      localStorage.removeItem('user');
+  };
+
+  const refreshUserData = useCallback(async () => {
+    if (!session?.user) {
+      setUserState(null);
+      setAddresses([]);
+      setOrders([]);
+      setFavoriteIds(new Set());
+      return;
     }
+
+    setUserState(mapSessionUser(session.user));
+
+    try {
+      const [addrs, ords, favs] = await Promise.all([
+        api.addresses.list(),
+        api.orders.list(),
+        api.favorites.list(),
+      ]);
+      setAddresses(addrs);
+      setOrders(ords);
+      setFavoriteIds(new Set(favs.map((f) => f.id)));
+    } catch {
+      // User may not have data yet
+    }
+  }, [session?.user]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    refreshUserData();
+  }, [authLoading, refreshUserData]);
+
+  const logout = async () => {
+    await signOut();
+    setUserState(null);
+    setAddresses([]);
+      setOrders([]);
+      setFavoriteIds(new Set());
+      setCart([]);
   };
 
   const addToCart = (item: CartItem) => {
-    setCart(prev => {
-      const existing = prev.find(i => i.id === item.id);
+    setCart((prev) => {
+      const existing = prev.find((i) => i.id === item.id);
       if (existing) {
-        return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i);
+        return prev.map((i) =>
+          i.id === item.id ? {...i, quantity: i.quantity + item.quantity} : i,
+        );
       }
       return [...prev, item];
     });
   };
 
   const removeFromCart = (id: string) => {
-    setCart(prev => prev.filter(item => item.id !== id));
+    setCart((prev) => prev.filter((item) => item.id !== id));
   };
 
   const updateQuantity = (id: string, quantity: number) => {
@@ -105,26 +139,70 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       removeFromCart(id);
       return;
     }
-    setCart(prev => prev.map(item => item.id === id ? { ...item, quantity } : item));
+    setCart((prev) => prev.map((item) => (item.id === id ? {...item, quantity} : item)));
   };
 
   const clearCart = () => setCart([]);
 
-  const addAddress = (address: Address) => setAddresses(prev => [...prev, address]);
-  const addPaymentMethod = (method: PaymentMethod) => setPaymentMethods(prev => [...prev, method]);
-  const addOrder = (order: Order) => setOrders(prev => [order, ...prev]);
-  const updateOrderStatus = (id: string, status: Order['status']) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+  const addAddress = async (address: Omit<Address, 'id'>) => {
+    const created = await api.addresses.create(address);
+    setAddresses((prev) => [...prev, created]);
+  };
+
+  const addOrder = async (order: Omit<Order, 'id' | 'date'> & {addressId?: string}) => {
+    const defaultAddr = addresses.find((a) => a.isDefault) ?? addresses[0];
+    const created = await api.orders.create({
+      items: order.items,
+      total: order.total,
+      addressId: order.addressId ?? defaultAddr?.id,
+    });
+    setOrders((prev) => [created, ...prev]);
+    return created;
+  };
+
+  const updateOrderStatus = async (id: string, status: Order['status']) => {
+    const updated = await api.orders.updateStatus(id, status);
+    setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
+  };
+
+  const toggleFavorite = async (menuItemId: string) => {
+    const isFav = favoriteIds.has(menuItemId);
+    if (isFav) {
+      await api.favorites.remove(menuItemId);
+      setFavoriteIds((prev) => {
+        const next = new Set(prev);
+        next.delete(menuItemId);
+        return next;
+      });
+    } else {
+      await api.favorites.add(menuItemId);
+      setFavoriteIds((prev) => new Set(prev).add(menuItemId));
+    }
   };
 
   return (
-    <AppContext.Provider value={{
-      user, setUser,
-      cart, addToCart, removeFromCart, updateQuantity, clearCart,
-      addresses, addAddress,
-      paymentMethods, addPaymentMethod,
-      orders, addOrder, updateOrderStatus
-    }}>
+    <AppContext.Provider
+      value={{
+        user,
+        setUser,
+        authLoading,
+        logout,
+        refreshUserData,
+        cart,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        addresses,
+        addAddress,
+        paymentMethods,
+        orders,
+        addOrder,
+        updateOrderStatus,
+        favoriteIds,
+        toggleFavorite,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );
