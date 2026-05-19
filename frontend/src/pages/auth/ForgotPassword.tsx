@@ -1,10 +1,12 @@
 import React, {useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {useLocation, useNavigate} from 'react-router-dom';
 import {ArrowLeft, Mail} from 'lucide-react';
 import {requestPasswordReset} from '../../lib/auth-client';
 
 export const ForgotPassword: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectMessage = (location.state as {message?: string} | null)?.message;
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -48,6 +50,10 @@ export const ForgotPassword: React.FC = () => {
       <p className="text-gray-500 mb-4 leading-relaxed">
         Enter your email and we will send a reset link if email delivery is enabled.
       </p>
+
+      {redirectMessage && (
+        <p className="mb-4 text-sm text-blue-800 bg-blue-50 px-4 py-3 rounded-xl">{redirectMessage}</p>
+      )}
 
       <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-sm">
         Password reset requires SMTP email on the backend. In local development, reset emails are not sent unless you configure mail settings.

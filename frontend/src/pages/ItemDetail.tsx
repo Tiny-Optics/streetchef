@@ -90,7 +90,7 @@ export const ItemDetail: React.FC = () => {
 
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-gray-900">Reviews (120)</h3>
+            <h3 className="text-lg font-bold text-gray-900">Sample reviews</h3>
             <Link to={`/item/${item.id}/reviews`} className="text-sm font-medium text-gray-900">See All</Link>
           </div>
           

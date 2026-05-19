@@ -55,10 +55,13 @@ interface AppContextType {
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   addresses: Address[];
+  selectedAddressId: string | null;
+  deliveryAddress: Address | undefined;
   addAddress: (address: Omit<Address, 'id'>) => Promise<void>;
+  setDefaultAddress: (id: string) => Promise<void>;
   paymentMethods: PaymentMethod[];
   orders: Order[];
-  addOrder: (order: Omit<Order, 'id' | 'date'>) => Promise<Order>;
+  addOrder: (order: Omit<Order, 'id' | 'date'> & {addressId?: string}) => Promise<Order>;
   updateOrderStatus: (id: string, status: Order['status']) => Promise<void>;
   favoriteIds: Set<string>;
   toggleFavorite: (menuItemId: string) => Promise<void>;
@@ -71,6 +74,7 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
   const [user, setUserState] = useState<User | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [paymentMethods] = useState<PaymentMethod[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
@@ -83,6 +87,7 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
     if (!session?.user) {
       setUserState(null);
       setAddresses([]);
+      setSelectedAddressId(null);
       setOrders([]);
       setFavoriteIds(new Set());
       return;
@@ -97,6 +102,11 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         api.favorites.list(),
       ]);
       setAddresses(addrs);
+      const defaultAddr = addrs.find((a) => a.isDefault) ?? addrs[0];
+      setSelectedAddressId((prev) => {
+        if (prev && addrs.some((a) => a.id === prev)) return prev;
+        return defaultAddr?.id ?? null;
+      });
       setOrders(ords);
       setFavoriteIds(new Set(favs.map((f) => f.id)));
     } catch {
@@ -113,9 +123,21 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
     await signOut();
     setUserState(null);
     setAddresses([]);
-      setOrders([]);
-      setFavoriteIds(new Set());
-      setCart([]);
+    setSelectedAddressId(null);
+    setOrders([]);
+    setFavoriteIds(new Set());
+    setCart([]);
+  };
+
+  const deliveryAddress =
+    addresses.find((a) => a.id === selectedAddressId) ??
+    addresses.find((a) => a.isDefault) ??
+    addresses[0];
+
+  const setDefaultAddress = async (id: string) => {
+    await api.addresses.update(id, {isDefault: true});
+    setAddresses((prev) => prev.map((a) => ({...a, isDefault: a.id === id})));
+    setSelectedAddressId(id);
   };
 
   const addToCart = (item: CartItem) => {
@@ -150,11 +172,12 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
   };
 
   const addOrder = async (order: Omit<Order, 'id' | 'date'> & {addressId?: string}) => {
-    const defaultAddr = addresses.find((a) => a.isDefault) ?? addresses[0];
+    const addrId =
+      order.addressId ?? selectedAddressId ?? addresses.find((a) => a.isDefault)?.id ?? addresses[0]?.id;
     const created = await api.orders.create({
       items: order.items,
       total: order.total,
-      addressId: order.addressId ?? defaultAddr?.id,
+      addressId: addrId,
     });
     setOrders((prev) => [created, ...prev]);
     return created;
@@ -194,7 +217,10 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
         updateQuantity,
         clearCart,
         addresses,
+        selectedAddressId,
+        deliveryAddress,
         addAddress,
+        setDefaultAddress,
         paymentMethods,
         orders,
         addOrder,

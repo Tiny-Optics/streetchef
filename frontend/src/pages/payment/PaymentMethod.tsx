@@ -8,7 +8,7 @@ export const PaymentMethod: React.FC = () => {
 
   const paymentDisabledNotice = (
     <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-sm">
-      Online payment is not enabled in this build. Orders use pay-on-delivery. Card selection is for display only.
+      Coming soon — online payment is not available. Orders use pay-on-delivery at checkout.
     </div>
   );
 
@@ -109,10 +109,11 @@ export const PaymentMethod: React.FC = () => {
 
       <div className="mt-auto pt-8">
         <button
-          onClick={() => navigate('/checkout')}
-          className="w-full bg-orange-500 text-white py-4 rounded-full font-bold text-lg shadow-lg shadow-orange-500/30 transition-all"
+          type="button"
+          disabled
+          className="w-full bg-gray-200 text-gray-500 py-4 rounded-full font-bold text-lg cursor-not-allowed"
         >
-          Continue
+          Coming soon
         </button>
       </div>
     </div>

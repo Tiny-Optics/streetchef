@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Star, Heart } from 'lucide-react';
 import { useMenu } from '../hooks/useMenu';
+import { useAppContext } from '../context/AppContext';
 import { motion } from 'motion/react';
 
 const categoryIcons: Record<string, string> = {
@@ -17,6 +18,7 @@ const categoryIcons: Record<string, string> = {
 };
 
 export const Home: React.FC = () => {
+  const { deliveryAddress } = useAppContext();
   const { items: menuItems } = useMenu();
   const popularItems = menuItems.filter(item => item.popular);
   const newItems = menuItems.slice(5, 10);
@@ -29,9 +31,13 @@ export const Home: React.FC = () => {
         <div className="flex justify-between items-center mb-4">
           <div>
             <p className="text-sm text-gray-500">Delivering to</p>
-            <Link to="/choose-location" className="flex items-center text-gray-900 font-semibold hover:text-orange-500 transition-colors">
+            <Link to="/address-selection" className="flex items-center text-gray-900 font-semibold hover:text-orange-500 transition-colors">
               <MapPin size={16} className="text-orange-500 mr-1" />
-              <span>12 Long Street, Cape Town</span>
+              <span className="line-clamp-1">
+                {deliveryAddress
+                  ? `${deliveryAddress.title} — ${deliveryAddress.address}`
+                  : 'Add delivery address'}
+              </span>
             </Link>
           </div>
           <div className="w-10 h-10 bg-gray-200 rounded-full overflow-hidden">
@@ -54,6 +60,7 @@ export const Home: React.FC = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent"></div>
           <div className="relative z-10 p-6 flex flex-col h-full justify-center w-2/3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-orange-200 mb-1">Sample offer</p>
             <h2 className="text-2xl font-bold mb-4 leading-tight">UP TO 30% OFF<br/>ON FIRST ORDER</h2>
             <Link to="/menu" className="bg-white text-gray-900 px-5 py-2 rounded-full text-sm font-bold inline-block w-max">
               Order Now
@@ -103,7 +110,7 @@ export const Home: React.FC = () => {
                 <div className="relative h-40">
                   <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                   <div className="absolute top-3 left-3 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-lg">
-                    10% Off
+                    Sample 10% off
                   </div>
                   <button className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-red-500">
                     <Heart size={16} />

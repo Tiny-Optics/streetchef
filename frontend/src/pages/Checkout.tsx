@@ -4,8 +4,7 @@ import { ArrowLeft, Minus, Plus } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
 export const Checkout: React.FC = () => {
-  const { cart, addresses, clearCart, addOrder, updateQuantity } = useAppContext();
-  const defaultAddress = addresses.find((a) => a.isDefault) ?? addresses[0];
+  const { cart, deliveryAddress, clearCart, addOrder, updateQuantity } = useAppContext();
   const navigate = useNavigate();
   const [selectedItem, setSelectedItem] = useState(cart[0]?.id);
 
@@ -19,13 +18,14 @@ export const Checkout: React.FC = () => {
   const handlePlaceOrder = async () => {
     setPlacing(true);
     try {
-      await addOrder({
+      const created = await addOrder({
         status: 'preparing',
         total,
         items: [...cart],
+        addressId: deliveryAddress?.id,
       });
       clearCart();
-      navigate('/order-success');
+      navigate('/order-success', {state: {orderId: created.id}});
     } catch {
       alert('Failed to place order. Please try again.');
     } finally {
@@ -97,8 +97,8 @@ export const Checkout: React.FC = () => {
             <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=200" alt="Map" className="w-full h-full object-cover opacity-50 grayscale" />
           </div>
           <div>
-            <h4 className="font-semibold text-gray-900 text-lg">{defaultAddress?.title ?? 'Add address'}</h4>
-            <p className="text-gray-500 text-sm">{defaultAddress?.address ?? 'Select a delivery address'}</p>
+            <h4 className="font-semibold text-gray-900 text-lg">{deliveryAddress?.title ?? 'Add address'}</h4>
+            <p className="text-gray-500 text-sm">{deliveryAddress?.address ?? 'Select a delivery address'}</p>
           </div>
         </div>
       </div>

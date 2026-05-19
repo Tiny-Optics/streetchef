@@ -54,7 +54,7 @@ export const MyOrder: React.FC = () => {
                   {order.status !== 'completed' && (
                     <button
                       type="button"
-                      onClick={() => navigate('/tracking')}
+                      onClick={() => navigate(`/tracking/${order.id}`)}
                       className="text-sm font-medium text-orange-500"
                     >
                       Track

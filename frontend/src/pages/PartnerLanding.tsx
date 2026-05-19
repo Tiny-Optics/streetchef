@@ -47,8 +47,16 @@ export const PartnerLanding: React.FC = () => {
             <p className="text-xl text-gray-600 mb-8">
               If you have a passion for food or dessert and want the world to not only taste your delicious home-cooked food, but also generate an income from home, then look no further than StreetChef.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button 
+            <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
+              <button
+                type="button"
+                onClick={() => navigate('/welcome')}
+                className="bg-white text-orange-600 border-2 border-orange-500 px-8 py-4 rounded-full font-bold text-lg hover:bg-orange-50 transition-colors flex items-center justify-center"
+              >
+                Order food
+              </button>
+              <button
+                type="button"
                 onClick={() => navigate('/signup?type=merchant')}
                 className="bg-orange-500 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-orange-600 transition-colors flex items-center justify-center"
               >

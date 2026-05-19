@@ -1,24 +1,22 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check } from 'lucide-react';
 import { motion } from 'motion/react';
 
+type OrderSuccessState = {
+  orderId?: string;
+};
+
 export const OrderSuccess: React.FC = () => {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Auto redirect to tracking after 3 seconds
-    const timer = setTimeout(() => {
-      navigate('/tracking', { replace: true });
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [navigate]);
+  const location = useLocation();
+  const orderId = (location.state as OrderSuccessState | null)?.orderId;
 
   return (
     <div className="min-h-screen bg-orange-500 flex flex-col px-6 py-8 relative overflow-hidden">
       <div className="flex items-center mb-8 relative z-10">
-        <button 
+        <button
+          type="button"
           onClick={() => navigate('/home', { replace: true })}
           className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-gray-900 mr-4"
         >
@@ -29,56 +27,6 @@ export const OrderSuccess: React.FC = () => {
 
       <div className="flex-1 flex flex-col items-center justify-center relative z-10 -mt-20">
         <div className="relative mb-8">
-          {/* Particles */}
-          <motion.div 
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="absolute -top-4 -left-4 w-4 h-4 bg-white rounded-full"
-          />
-          <motion.div 
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="absolute top-0 -right-2 w-2 h-2 bg-white/60 rounded-full"
-          />
-          <motion.div 
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="absolute bottom-4 -left-8 w-2 h-2 bg-white/60 rounded-full"
-          />
-          <motion.div 
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="absolute -bottom-2 right-0 w-3 h-3 bg-white rounded-full"
-          />
-          <motion.div 
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="absolute top-1/2 -right-8 w-1.5 h-1.5 bg-white/80 rounded-full"
-          />
-          
-          {/* Crosses */}
-          <motion.div 
-            initial={{ scale: 0, opacity: 0, rotate: -45 }}
-            animate={{ scale: 1, opacity: 1, rotate: 0 }}
-            transition={{ delay: 0.4 }}
-            className="absolute top-8 -right-6 text-white/80 text-xl font-light"
-          >
-            +
-          </motion.div>
-          <motion.div 
-            initial={{ scale: 0, opacity: 0, rotate: 45 }}
-            animate={{ scale: 1, opacity: 1, rotate: 0 }}
-            transition={{ delay: 0.5 }}
-            className="absolute bottom-8 -left-6 text-white/80 text-xl font-light"
-          >
-            +
-          </motion.div>
-
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -89,7 +37,7 @@ export const OrderSuccess: React.FC = () => {
           </motion.div>
         </div>
 
-        <motion.h2 
+        <motion.h2
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -97,25 +45,50 @@ export const OrderSuccess: React.FC = () => {
         >
           Order Successfully
         </motion.h2>
-        
-        <motion.p 
+
+        <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
           className="text-white/90 text-center leading-relaxed px-4 mb-12"
         >
-          Happy! Your food will be made immediately and we will send it after it's finished by the courier.
+          Happy! Your food will be made immediately and we will send it after it&apos;s finished by the courier.
         </motion.p>
 
-        <motion.button
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          onClick={() => navigate('/tracking', { replace: true })}
-          className="bg-white text-orange-500 px-8 py-4 rounded-full font-bold text-lg shadow-lg hover:bg-gray-50 transition-colors w-full max-w-xs"
+          className="w-full max-w-xs space-y-3"
         >
-          Track Order
-        </motion.button>
+          {orderId ? (
+            <button
+              type="button"
+              onClick={() => navigate(`/tracking/${orderId}`, { replace: true })}
+              className="w-full bg-white text-orange-500 px-8 py-4 rounded-full font-bold text-lg shadow-lg hover:bg-gray-50 transition-colors"
+            >
+              Track Order
+            </button>
+          ) : (
+            <p className="text-white/80 text-center text-sm mb-2">
+              Track this order from My Orders once it appears in your list.
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => navigate('/my-order')}
+            className="w-full bg-white/20 text-white px-8 py-4 rounded-full font-bold text-lg border border-white/40 hover:bg-white/30 transition-colors"
+          >
+            View My Orders
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/home', { replace: true })}
+            className="w-full text-white/90 py-2 text-sm font-medium"
+          >
+            Back to Home
+          </button>
+        </motion.div>
       </div>
     </div>
   );

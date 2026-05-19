@@ -1,14 +1,22 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {ArrowLeft, MapPin} from 'lucide-react';
 import {useAppContext} from '../../context/AppContext';
 
 export const AddressSelection: React.FC = () => {
   const navigate = useNavigate();
-  const {addresses, addAddress} = useAppContext();
+  const {addresses, addAddress, setDefaultAddress, selectedAddressId} = useAppContext();
   const defaultAddr = addresses.find((a) => a.isDefault) ?? addresses[0];
-  const [selectedAddress, setSelectedAddress] = useState(defaultAddr?.id ?? '');
+  const [selectedAddress, setSelectedAddress] = useState(selectedAddressId ?? defaultAddr?.id ?? '');
   const [showAdd, setShowAdd] = useState(false);
+
+  useEffect(() => {
+    if (selectedAddressId) {
+      setSelectedAddress(selectedAddressId);
+    } else if (defaultAddr?.id) {
+      setSelectedAddress(defaultAddr.id);
+    }
+  }, [selectedAddressId, defaultAddr?.id]);
   const [newTitle, setNewTitle] = useState('');
   const [newAddress, setNewAddress] = useState('');
 
@@ -99,8 +107,14 @@ export const AddressSelection: React.FC = () => {
       <div className="mt-auto pt-8">
         <button
           type="button"
-          onClick={() => navigate('/checkout')}
-          className="w-full bg-orange-500 text-white py-4 rounded-full font-bold text-lg shadow-lg shadow-orange-500/30"
+          onClick={async () => {
+            if (selectedAddress) {
+              await setDefaultAddress(selectedAddress);
+            }
+            navigate('/checkout');
+          }}
+          disabled={!selectedAddress && addresses.length > 0}
+          className="w-full bg-orange-500 text-white py-4 rounded-full font-bold text-lg shadow-lg shadow-orange-500/30 disabled:opacity-50"
         >
           Continue
         </button>
