@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.env.*
+!.env.example
+.git
+*.md
+docker-entrypoint.sh
+Dockerfile
+Dockerfile.prod
