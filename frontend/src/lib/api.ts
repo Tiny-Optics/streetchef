@@ -1,4 +1,4 @@
-import type {User, Address, Order, CartItem} from '../context/AppContext';
+import type {User, Address, Order, CartItem, DriverProfile} from '../context/AppContext';
 import type {MenuItem} from '../data/menu';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
@@ -60,6 +60,7 @@ export type DriverEarnings = {
   todayEarnings: number;
   weekEarnings: number;
   tripCount: number;
+  weekTripCount: number;
   trips: {id: string; date: string; amount: number; distance: string}[];
 };
 
@@ -80,7 +81,7 @@ export const api = {
   },
   profile: {
     get: () => request<User>('/api/profile'),
-    update: (data: Partial<User> & {dateOfBirth?: string; gender?: string}) =>
+    update: (data: Partial<User> & {dateOfBirth?: string; gender?: string; driverProfile?: DriverProfile}) =>
       request<User>('/api/profile', {method: 'PATCH', body: JSON.stringify(data)}),
   },
   addresses: {
@@ -185,7 +186,31 @@ export const api = {
     earnings: () => request<DriverEarnings>('/api/driver/earnings'),
   },
   paymentDisabled: () => request<{error: string; message: string}>('/api/payment'),
+  upload: {
+    image: async (file: File): Promise<{url: string}> => {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await fetch(`${API_BASE}/api/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((body as {error?: string}).error ?? `Upload failed: ${res.status}`);
+      }
+      return res.json() as Promise<{url: string}>;
+    },
+  },
 };
+
+export function resolveImageUrl(url: string): string {
+  if (!url) return url;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  return `${API_BASE}${url}`;
+}
 
 export function mapSessionUser(
   sessionUser: {

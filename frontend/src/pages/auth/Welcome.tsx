@@ -29,7 +29,7 @@ export const Welcome: React.FC = () => {
             Welcome to <span className="text-orange-500">StreetChef</span>
           </h1>
           <p className="text-gray-300 text-base leading-relaxed px-2">
-            The best food delivery app in town. Get your favorite meals delivered fast and fresh.
+            Explore home cooked meals at your fingertips on StreetChef
           </p>
         </motion.div>
 
@@ -55,7 +55,7 @@ export const Welcome: React.FC = () => {
           <div className="pt-4 text-center">
             <button 
               onClick={() => navigate('/partner')}
-              className="text-gray-300 hover:text-white text-sm font-medium transition-colors"
+              className="text-orange-400 underline underline-offset-4 font-semibold hover:text-orange-300 text-sm transition-colors"
             >
               Want to partner with us? Earn with StreetChef
             </button>

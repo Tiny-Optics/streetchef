@@ -1,8 +1,8 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {ArrowLeft, Edit2, Calendar} from 'lucide-react';
 import {useAppContext} from '../context/AppContext';
-import {api} from '../lib/api';
+import {api, resolveImageUrl} from '../lib/api';
 
 export const EditProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -17,33 +17,69 @@ export const EditProfile: React.FC = () => {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>();
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
-    const phone = user.phone ?? '';
-    setFormData({
-      fullName: user.name,
-      email: user.email,
-      phoneCode: phone.startsWith('+27') ? '+27' : '+27',
-      phoneNumber: phone.replace(/^\+27\s?/, ''),
-      dob: '',
-      gender: 'Male',
-    });
+
+    api.profile
+      .get()
+      .then((profile) => {
+        const phone = profile.phone ?? '';
+        setFormData({
+          fullName: profile.name,
+          email: profile.email,
+          phoneCode: phone.startsWith('+27') ? '+27' : '+27',
+          phoneNumber: phone.replace(/^\+27\s?/, ''),
+          dob: profile.dateOfBirth ?? '',
+          gender: profile.gender ?? 'Male',
+        });
+        setAvatarUrl(profile.avatar);
+      })
+      .catch(() => {
+        const phone = user.phone ?? '';
+        setFormData({
+          fullName: user.name,
+          email: user.email,
+          phoneCode: phone.startsWith('+27') ? '+27' : '+27',
+          phoneNumber: phone.replace(/^\+27\s?/, ''),
+          dob: user.dateOfBirth ?? '',
+          gender: user.gender ?? 'Male',
+        });
+      });
   }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({...formData, [e.target.name]: e.target.value});
   };
 
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPendingAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+    e.target.value = '';
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setError('');
     try {
+      let avatar = avatarUrl;
+      if (pendingAvatarFile) {
+        const uploaded = await api.upload.image(pendingAvatarFile);
+        avatar = uploaded.url;
+      }
+
       await api.profile.update({
         name: formData.fullName,
         phone: `${formData.phoneCode} ${formData.phoneNumber}`.trim(),
         dateOfBirth: formData.dob,
         gender: formData.gender,
+        ...(avatar ? {avatar} : {}),
       });
       await refreshUserData();
       navigate(-1);
@@ -53,6 +89,11 @@ export const EditProfile: React.FC = () => {
       setSaving(false);
     }
   };
+
+  const displayAvatar =
+    avatarPreview ??
+    resolveImageUrl(avatarUrl ?? user?.avatar ?? '') ||
+    'https://i.pravatar.cc/150?img=11';
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -72,12 +113,23 @@ export const EditProfile: React.FC = () => {
         <div className="relative">
           <div className="w-32 h-32 bg-gray-200 rounded-full overflow-hidden">
             <img
-              src={user?.avatar ?? 'https://i.pravatar.cc/150?img=11'}
+              src={displayAvatar}
               alt="User"
               className="w-full h-full object-cover"
             />
           </div>
-          <button className="absolute bottom-0 right-0 w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center border-4 border-white text-white shadow-sm">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarSelect}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute bottom-0 right-0 w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center border-4 border-white text-white shadow-sm"
+          >
             <Edit2 size={16} />
           </button>
         </div>
@@ -136,7 +188,7 @@ export const EditProfile: React.FC = () => {
           <label className="block text-sm font-medium text-gray-900 mb-2">Date of Birth</label>
           <div className="relative">
             <input
-              type="text"
+              type="date"
               name="dob"
               value={formData.dob}
               onChange={handleChange}

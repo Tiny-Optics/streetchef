@@ -1,7 +1,9 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useLocation, useNavigate} from 'react-router-dom';
 import {ArrowLeft, Mail} from 'lucide-react';
 import {requestPasswordReset} from '../../lib/auth-client';
+
+const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
 export const ForgotPassword: React.FC = () => {
   const navigate = useNavigate();
@@ -11,6 +13,14 @@ export const ForgotPassword: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [smtpConfigured, setSmtpConfigured] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api`)
+      .then((res) => res.json())
+      .then((data: {smtpConfigured?: boolean}) => setSmtpConfigured(Boolean(data.smtpConfigured)))
+      .catch(() => setSmtpConfigured(false));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,11 +36,19 @@ export const ForgotPassword: React.FC = () => {
     try {
       await requestPasswordReset(email, `${window.location.origin}/new-password`);
 
-      setMessage(
-        'If email delivery is configured on the server, you will receive a reset link shortly. Without SMTP, password reset is not available — contact support or sign up again.',
-      );
+      if (smtpConfigured) {
+        setMessage('Check your email for a reset link. The link expires after a short time.');
+      } else {
+        setMessage(
+          'If an account exists for this email, a reset link will be sent once email delivery is configured on the server.',
+        );
+      }
     } catch {
-      setError('Password reset is unavailable. Email (SMTP) must be configured on the server.');
+      setError(
+        smtpConfigured
+          ? 'Could not send reset email. Please try again later.'
+          : 'Password reset is unavailable. Email (SMTP) must be configured on the server.',
+      );
     } finally {
       setLoading(false);
     }
@@ -48,16 +66,18 @@ export const ForgotPassword: React.FC = () => {
 
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Forgot Password</h1>
       <p className="text-gray-500 mb-4 leading-relaxed">
-        Enter your email and we will send a reset link if email delivery is enabled.
+        Enter your email and we will send you a link to reset your password.
       </p>
 
       {redirectMessage && (
         <p className="mb-4 text-sm text-blue-800 bg-blue-50 px-4 py-3 rounded-xl">{redirectMessage}</p>
       )}
 
-      <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-sm">
-        Password reset requires SMTP email on the backend. In local development, reset emails are not sent unless you configure mail settings.
-      </div>
+      {smtpConfigured === false && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-sm">
+          Password reset requires SMTP email on the backend. Contact support if you need help accessing your account.
+        </div>
+      )}
 
       {error && (
         <p className="mb-4 text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">{error}</p>

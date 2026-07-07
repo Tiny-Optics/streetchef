@@ -3,13 +3,20 @@ import { Link } from 'react-router-dom';
 import { MapPin, Clock, Star, Heart } from 'lucide-react';
 import { useMenu } from '../hooks/useMenu';
 import { useAppContext } from '../context/AppContext';
+import { categories } from '../data/menu';
 import { motion } from 'motion/react';
 
+const homeCategories = categories.filter((c) => c !== 'All').slice(0, 8);
+
 const categoryIcons: Record<string, string> = {
+  'Braai': '🔥',
+  'Bunny Chow': '🍛',
+  'Pap & Sides': '🌽',
+  'Kota': '🥪',
+  'Cape Malay': '🍲',
+  'Township Favourites': '🏘️',
   'Pizza': '🍕',
   'Burgers': '🍔',
-  'Cookies': '🍪',
-  'Pastry': '🥐',
   'Asian': '🍜',
   'Desserts': '🍰',
   'Drinks': '🥤',
@@ -72,7 +79,7 @@ export const Home: React.FC = () => {
       {/* Categories */}
       <div className="mt-6">
         <div className="flex overflow-x-auto px-4 pb-2 space-x-3 hide-scrollbar">
-          {['Pizza', 'Burgers', 'Asian', 'Healthy', 'Mexican', 'Desserts', 'Drinks'].map((category, index) => (
+          {homeCategories.map((category, index) => (
             <Link 
               key={category} 
               to={`/menu?category=${category}`}
@@ -183,7 +190,7 @@ export const Home: React.FC = () => {
 
       {/* All Restaurants (Vertical List) */}
       <div className="mt-6 px-4">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">All Restaurants</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">All Kitchens</h3>
         <div className="space-y-4">
           {allItems.map((item, index) => (
             <motion.div 

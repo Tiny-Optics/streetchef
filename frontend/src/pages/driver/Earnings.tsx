@@ -63,14 +63,14 @@ export const DriverEarnings: React.FC = () => {
             <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mb-3">
               <Clock size={20} className="text-orange-600" />
             </div>
-            <p className="text-gray-500 text-sm mb-1">Completed Trips</p>
-            <p className="text-xl font-bold text-gray-900">{earnings?.tripCount ?? 0}</p>
+            <p className="text-gray-500 text-sm mb-1">Completed Deliveries</p>
+            <p className="text-xl font-bold text-gray-900">{earnings?.weekTripCount ?? 0}</p>
           </div>
         </div>
 
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Trips</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Deliveries</h3>
         {trips.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No completed trips yet.</p>
+          <p className="text-gray-500 text-center py-8">No completed deliveries yet.</p>
         ) : (
           <div className="space-y-4">
             {trips.map((trip) => (

@@ -177,7 +177,7 @@ export const DriverHome: React.FC = () => {
               {isOnline ? "You're Online" : "You're Offline"}
             </h2>
             <p className="text-gray-500 text-sm mb-6 text-center">
-              {isOnline ? "Finding trips nearby..." : "Go online to start receiving delivery requests."}
+              {isOnline ? "Finding deliveries near you" : "Go online to start receiving delivery requests."}
             </p>
             
             <button 

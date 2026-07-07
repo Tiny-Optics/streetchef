@@ -1,8 +1,11 @@
 import cors from 'cors';
 import 'dotenv/config';
 import express from 'express';
+import path from 'path';
+import {fileURLToPath} from 'url';
 import {toNodeHandler} from 'better-auth/node';
 import {initAuth} from './auth.js';
+import {isSmtpConfigured} from './email.js';
 import {connectDb} from './db.js';
 import {seedDatabase} from './seed/index.js';
 import {menuRouter} from './routes/menu.js';
@@ -14,6 +17,10 @@ import {merchantRouter} from './routes/merchant.js';
 import {settingsRouter} from './routes/settings.js';
 import {contentRouter} from './routes/content.js';
 import {driverRouter} from './routes/driver.js';
+import {uploadRouter} from './routes/upload.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadsDir = path.resolve(__dirname, '../uploads');
 
 const PORT = Number(process.env.PORT) || 4000;
 const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
@@ -34,6 +41,8 @@ async function start() {
 
   app.all('/api/auth/*', toNodeHandler(auth));
 
+  app.use('/uploads', express.static(uploadsDir));
+
   app.use(express.json());
 
   app.get('/health', (_req, res) => {
@@ -41,7 +50,7 @@ async function start() {
   });
 
   app.get('/api', (_req, res) => {
-    res.json({name: 'StreetChef API', version: '0.0.0'});
+    res.json({name: 'StreetChef API', version: '0.0.0', smtpConfigured: isSmtpConfigured()});
   });
 
   app.use('/api/menu', menuRouter);
@@ -53,6 +62,7 @@ async function start() {
   app.use('/api/settings', settingsRouter);
   app.use('/api/content', contentRouter);
   app.use('/api/driver', driverRouter);
+  app.use('/api/upload', uploadRouter);
 
   app.get('/api/payment', (_req, res) => {
     res.status(501).json({

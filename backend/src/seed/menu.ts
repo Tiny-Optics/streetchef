@@ -170,4 +170,42 @@ export const seedMenuItems: MenuItemDoc[] = [
     reviews: 620,
     prepTime: '25-35 min',
   },
+  {
+    id: '13',
+    name: 'Durban Bunny Chow',
+    description: 'Half loaf filled with fragrant lamb curry, served with sambals.',
+    price: 89.99,
+    image:
+      'https://images.unsplash.com/photo-1585937421612-70a008296fbe?auto=format&fit=crop&q=80&w=800',
+    category: 'Bunny Chow',
+    popular: true,
+    rating: 4.9,
+    reviews: 412,
+    prepTime: '25-35 min',
+  },
+  {
+    id: '14',
+    name: 'Boerewors Roll',
+    description: 'Grilled boerewors in a fresh roll with chakalaka and tomato relish.',
+    price: 65.0,
+    image:
+      'https://images.unsplash.com/photo-1529042410759-befb1204b952?auto=format&fit=crop&q=80&w=800',
+    category: 'Braai',
+    popular: true,
+    rating: 4.8,
+    reviews: 298,
+    prepTime: '15-20 min',
+  },
+  {
+    id: '15',
+    name: 'Chicken Kota',
+    description: 'Quarter loaf stuffed with chips, polony, cheese, and atchar.',
+    price: 45.0,
+    image:
+      'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?auto=format&fit=crop&q=80&w=800',
+    category: 'Kota',
+    rating: 4.7,
+    reviews: 534,
+    prepTime: '10-15 min',
+  },
 ];

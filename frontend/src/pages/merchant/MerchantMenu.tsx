@@ -1,8 +1,8 @@
-import React, {useState, useEffect, useMemo} from 'react';
+import React, {useState, useEffect, useMemo, useRef} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {ArrowLeft, Plus, Edit2, Search, Trash2, X} from 'lucide-react';
+import {ArrowLeft, Plus, Edit2, Search, Trash2, X, ImagePlus} from 'lucide-react';
 import {motion, AnimatePresence} from 'motion/react';
-import {api} from '../../lib/api';
+import {api, resolveImageUrl} from '../../lib/api';
 import {categories} from '../../data/menu';
 import type {MenuItem} from '../../data/menu';
 
@@ -34,6 +34,16 @@ export const MerchantMenu: React.FC = () => {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<ItemForm>(emptyForm);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const resetImageState = () => {
+    setPendingImageFile(null);
+    setImagePreview(null);
+    setShowUrlInput(false);
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -65,6 +75,7 @@ export const MerchantMenu: React.FC = () => {
   const openCreate = () => {
     setEditingItem(null);
     setForm(emptyForm);
+    resetImageState();
     setShowForm(true);
   };
 
@@ -77,6 +88,7 @@ export const MerchantMenu: React.FC = () => {
       image: item.image,
       category: item.category,
     });
+    resetImageState();
     setShowForm(true);
   };
 
@@ -84,6 +96,15 @@ export const MerchantMenu: React.FC = () => {
     setShowForm(false);
     setEditingItem(null);
     setForm(emptyForm);
+    resetImageState();
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPendingImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    e.target.value = '';
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -96,11 +117,17 @@ export const MerchantMenu: React.FC = () => {
 
     setSaving(true);
     try {
+      let imageUrl = form.image.trim() || undefined;
+      if (pendingImageFile) {
+        const uploaded = await api.upload.image(pendingImageFile);
+        imageUrl = uploaded.url;
+      }
+
       const payload = {
         name: form.name.trim(),
         description: form.description.trim(),
         price,
-        image: form.image.trim() || undefined,
+        image: imageUrl,
         category: form.category,
       };
 
@@ -206,7 +233,7 @@ export const MerchantMenu: React.FC = () => {
               >
                 <motion.div className="w-20 h-20 rounded-xl overflow-hidden mr-4 shrink-0">
                   <img
-                    src={item.image}
+                    src={resolveImageUrl(item.image)}
                     alt={item.name}
                     className={`w-full h-full object-cover ${!isAvailable(item) ? 'grayscale opacity-50' : ''}`}
                   />
@@ -334,14 +361,51 @@ export const MerchantMenu: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-                  <input
-                    type="url"
-                    value={form.image}
-                    onChange={(e) => setForm((f) => ({...f, image: e.target.value}))}
-                    placeholder="https://..."
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
+                  <div className="flex items-start gap-4">
+                    <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                      {(imagePreview || form.image) && (
+                        <img
+                          src={imagePreview ?? resolveImageUrl(form.image)}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageSelect}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-orange-200 bg-orange-50 text-orange-700 rounded-xl font-medium hover:bg-orange-100 transition-colors"
+                      >
+                        <ImagePlus size={18} />
+                        Choose from gallery
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowUrlInput((v) => !v)}
+                        className="text-sm text-gray-500 hover:text-gray-700"
+                      >
+                        {showUrlInput ? 'Hide URL input' : 'Or paste image URL'}
+                      </button>
+                    </div>
+                  </div>
+                  {showUrlInput && (
+                    <input
+                      type="url"
+                      value={form.image}
+                      onChange={(e) => setForm((f) => ({...f, image: e.target.value}))}
+                      placeholder="https://..."
+                      className="w-full mt-3 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  )}
                 </div>
                 <button
                   type="submit"

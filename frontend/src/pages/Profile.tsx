@@ -6,13 +6,13 @@ import {
   Lock,
   Bell,
   Shield,
-  Globe,
   ShieldCheck,
   HelpCircle,
   Edit2,
   LogOut,
 } from 'lucide-react';
 import {useAppContext} from '../context/AppContext';
+import {resolveImageUrl} from '../lib/api';
 
 export const Profile: React.FC = () => {
   const {user, logout} = useAppContext();
@@ -30,12 +30,16 @@ export const Profile: React.FC = () => {
           <div className="relative">
             <div className="w-20 h-20 bg-gray-200 rounded-full overflow-hidden">
               <img
-                src={user?.avatar ?? 'https://i.pravatar.cc/150?img=11'}
+                src={resolveImageUrl(user?.avatar ?? '') || 'https://i.pravatar.cc/150?img=11'}
                 alt="User"
                 className="w-full h-full object-cover"
               />
             </div>
-            <button className="absolute bottom-0 right-0 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center border-2 border-white text-white">
+            <button
+              type="button"
+              onClick={() => navigate('/edit-profile')}
+              className="absolute bottom-0 right-0 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center border-2 border-white text-white"
+            >
               <Edit2 size={12} />
             </button>
           </div>
@@ -113,16 +117,6 @@ export const Profile: React.FC = () => {
               <div className="flex items-center text-gray-900">
                 <HelpCircle size={20} className="mr-3 text-gray-900" />
                 <span className="font-medium">Help & Support</span>
-              </div>
-              <ChevronRight size={20} className="text-gray-400" />
-            </Link>
-            <Link
-              to="/partner"
-              className="flex items-center justify-between p-4 border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center text-gray-900">
-                <Globe size={20} className="mr-3 text-gray-900" />
-                <span className="font-medium">Partner with Us</span>
               </div>
               <ChevronRight size={20} className="text-gray-400" />
             </Link>

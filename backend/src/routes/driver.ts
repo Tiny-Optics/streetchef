@@ -155,6 +155,7 @@ driverRouter.get('/earnings', async (req: AuthedRequest, res) => {
       todayEarnings: Math.round(todayEarnings * 100) / 100,
       weekEarnings: Math.round(weekEarnings * 100) / 100,
       tripCount: completed.length,
+      weekTripCount: weekOrders.length,
       trips,
     });
   } catch {
