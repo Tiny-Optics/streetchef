@@ -92,7 +92,7 @@ export const EditProfile: React.FC = () => {
 
   const displayAvatar =
     avatarPreview ??
-    resolveImageUrl(avatarUrl ?? user?.avatar ?? '') ||
+    resolveImageUrl(avatarUrl ?? user?.avatar ?? '') ??
     'https://i.pravatar.cc/150?img=11';
 
   return (
