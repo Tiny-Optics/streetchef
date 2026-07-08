@@ -1,6 +1,7 @@
 import {betterAuth} from 'better-auth';
 import {mongodbAdapter} from 'better-auth/adapters/mongodb';
 import type {Db} from 'mongodb';
+import {sendPasswordResetEmail} from './email.js';
 
 const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
 
@@ -12,6 +13,9 @@ export function createAuth(db: Db) {
     trustedOrigins: [frontendUrl],
     emailAndPassword: {
       enabled: true,
+      sendResetPassword: async ({user, url}) => {
+        void sendPasswordResetEmail(user.email, url);
+      },
     },
     user: {
       additionalFields: {

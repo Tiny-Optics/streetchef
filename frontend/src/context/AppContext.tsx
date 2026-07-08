@@ -2,6 +2,14 @@ import React, {createContext, useContext, useState, useEffect, ReactNode, useCal
 import {useSession, signOut} from '../lib/auth-client';
 import {api, mapSessionUser} from '../lib/api';
 
+export type DriverProfile = {
+  driversLicense?: string;
+  vehicleMake: string;
+  vehicleModel: string;
+  vehicleYear: string;
+  licensePlate: string;
+};
+
 export type User = {
   id: string;
   name: string;
@@ -9,6 +17,9 @@ export type User = {
   phone: string;
   avatar?: string;
   role?: 'customer' | 'driver' | 'merchant';
+  dateOfBirth?: string;
+  gender?: string;
+  driverProfile?: DriverProfile;
 };
 
 export type CartItem = {

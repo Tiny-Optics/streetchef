@@ -24,6 +24,10 @@ export default defineConfig(({mode}) => {
           target: env.VITE_API_PROXY_TARGET || 'http://localhost:4000',
           changeOrigin: true,
         },
+        '/uploads': {
+          target: env.VITE_API_PROXY_TARGET || 'http://localhost:4000',
+          changeOrigin: true,
+        },
         '/health': {
           target: env.VITE_API_PROXY_TARGET || 'http://localhost:4000',
           changeOrigin: true,
