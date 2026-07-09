@@ -13,14 +13,14 @@ import {
 } from 'lucide-react';
 import {useAppContext} from '../context/AppContext';
 import {resolveImageUrl} from '../lib/api';
+import {SIGNED_OUT_PATH} from '../lib/auth-routes';
 
 export const Profile: React.FC = () => {
   const {user, logout} = useAppContext();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/welcome');
+    await logout(() => navigate(SIGNED_OUT_PATH));
   };
 
   return (

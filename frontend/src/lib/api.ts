@@ -220,8 +220,20 @@ export function mapSessionUser(
     image?: string | null;
     role?: string;
     phone?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    driverProfile?: string;
   },
 ): User {
+  let parsedDriverProfile: DriverProfile | undefined;
+  if (sessionUser.driverProfile && typeof sessionUser.driverProfile === 'string') {
+    try {
+      parsedDriverProfile = JSON.parse(sessionUser.driverProfile) as DriverProfile;
+    } catch {
+      parsedDriverProfile = undefined;
+    }
+  }
+
   return {
     id: sessionUser.id,
     name: sessionUser.name,
@@ -229,6 +241,9 @@ export function mapSessionUser(
     phone: sessionUser.phone ?? '',
     avatar: sessionUser.image ?? undefined,
     role: (sessionUser.role as User['role']) ?? 'customer',
+    dateOfBirth: sessionUser.dateOfBirth,
+    gender: sessionUser.gender,
+    driverProfile: parsedDriverProfile,
   };
 }
 

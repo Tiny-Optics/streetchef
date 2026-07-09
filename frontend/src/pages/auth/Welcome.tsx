@@ -31,6 +31,9 @@ export const Welcome: React.FC = () => {
           <p className="text-gray-300 text-base leading-relaxed px-2">
             Explore home cooked meals at your fingertips on StreetChef
           </p>
+          <p className="text-gray-400 text-sm mt-3 px-2">
+            Sign in to order from local kitchens, save favourites, and track your meals.
+          </p>
         </motion.div>
 
         <motion.div
@@ -52,12 +55,13 @@ export const Welcome: React.FC = () => {
             Sign In
           </button>
           
-          <div className="pt-4 text-center">
+          <div className="pt-6 text-center border-t border-white/10 mt-2">
+            <p className="text-gray-500 text-xs mb-2">Cooking or delivering with us?</p>
             <button 
               onClick={() => navigate('/partner')}
-              className="text-orange-400 underline underline-offset-4 font-semibold hover:text-orange-300 text-sm transition-colors"
+              className="text-gray-400 hover:text-gray-200 text-xs transition-colors"
             >
-              Want to partner with us? Earn with StreetChef
+              Partner with StreetChef
             </button>
           </div>
         </motion.div>

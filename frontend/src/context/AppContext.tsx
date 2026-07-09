@@ -1,6 +1,7 @@
 import React, {createContext, useContext, useState, useEffect, ReactNode, useCallback} from 'react';
 import {useSession, signOut} from '../lib/auth-client';
 import {api, mapSessionUser} from '../lib/api';
+import {SIGNED_OUT_PATH} from '../lib/auth-routes';
 
 export type DriverProfile = {
   driversLicense?: string;
@@ -58,7 +59,7 @@ interface AppContextType {
   user: User | null;
   setUser: (user: User | null) => void;
   authLoading: boolean;
-  logout: () => Promise<void>;
+  logout: (onSignedOut?: () => void) => Promise<void>;
   refreshUserData: () => Promise<void>;
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
@@ -104,7 +105,12 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
       return;
     }
 
-    setUserState(mapSessionUser(session.user));
+    try {
+      const profile = await api.profile.get();
+      setUserState(profile);
+    } catch {
+      setUserState(mapSessionUser(session.user));
+    }
 
     try {
       const [addrs, ords, favs] = await Promise.all([
@@ -130,14 +136,23 @@ export const AppProvider: React.FC<{children: ReactNode}> = ({children}) => {
     refreshUserData();
   }, [authLoading, refreshUserData]);
 
-  const logout = async () => {
-    await signOut();
+  const logout = async (onSignedOut?: () => void) => {
+    try {
+      await signOut();
+    } catch {
+      // Continue clearing local state even if sign-out request fails
+    }
     setUserState(null);
     setAddresses([]);
     setSelectedAddressId(null);
     setOrders([]);
     setFavoriteIds(new Set());
     setCart([]);
+    if (onSignedOut) {
+      onSignedOut();
+    } else if (typeof window !== 'undefined') {
+      window.location.assign(SIGNED_OUT_PATH);
+    }
   };
 
   const deliveryAddress =

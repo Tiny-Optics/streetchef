@@ -43,12 +43,15 @@ export const ForgotPassword: React.FC = () => {
           'If an account exists for this email, a reset link will be sent once email delivery is configured on the server.',
         );
       }
-    } catch {
-      setError(
-        smtpConfigured
-          ? 'Could not send reset email. Please try again later.'
-          : 'Password reset is unavailable. Email (SMTP) must be configured on the server.',
-      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.toLowerCase().includes('callback') || msg.toLowerCase().includes('origin')) {
+        setError('Password reset failed: site URL is not trusted on the server. Contact support.');
+      } else if (smtpConfigured) {
+        setError(msg || 'Could not send reset email. Please try again later.');
+      } else {
+        setError('Password reset is unavailable. Email (SMTP) must be configured on the server.');
+      }
     } finally {
       setLoading(false);
     }

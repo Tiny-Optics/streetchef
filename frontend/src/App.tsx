@@ -7,6 +7,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AppProvider, useAppContext } from './context/AppContext';
 import type {User} from './context/AppContext';
+import { SIGNED_OUT_PATH } from './lib/auth-routes';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Menu } from './pages/Menu';
@@ -72,14 +73,14 @@ function normalizeRole(role?: User['role']): AppRole {
 const ProtectedRoute = () => {
   const { user, authLoading } = useAppContext();
   if (authLoading) return <LoadingScreen />;
-  if (!user) return <Navigate to="/welcome" replace />;
+  if (!user) return <Navigate to={SIGNED_OUT_PATH} replace />;
   return <Outlet />;
 };
 
 const RoleRoute = ({allow}: {allow: AppRole[]}) => {
   const {user, authLoading} = useAppContext();
   if (authLoading) return <LoadingScreen />;
-  if (!user) return <Navigate to="/welcome" replace />;
+  if (!user) return <Navigate to={SIGNED_OUT_PATH} replace />;
   const role = normalizeRole(user.role);
   if (!allow.includes(role)) {
     return <Navigate to={roleHome(role)} replace />;

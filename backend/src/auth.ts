@@ -14,7 +14,7 @@ export function createAuth(db: Db) {
     emailAndPassword: {
       enabled: true,
       sendResetPassword: async ({user, url}) => {
-        void sendPasswordResetEmail(user.email, url);
+        await sendPasswordResetEmail(user.email, url);
       },
     },
     user: {
