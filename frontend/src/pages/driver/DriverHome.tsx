@@ -6,6 +6,7 @@ import L from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 import { api, type DriverOrderOffer } from '../../lib/api';
+import { SIGNED_OUT_PATH } from '../../lib/auth-routes';
 
 // Custom marker icon for driver
 const driverIcon = new L.Icon({
@@ -345,8 +346,7 @@ export const DriverHome: React.FC = () => {
               <div className="p-6 border-t border-gray-100">
                 <button 
                   onClick={async () => {
-                    await logout();
-                    navigate('/welcome');
+                    await logout(() => navigate(SIGNED_OUT_PATH));
                   }}
                   className="w-full py-3 text-red-500 font-bold text-lg hover:bg-red-50 rounded-xl transition-colors"
                 >

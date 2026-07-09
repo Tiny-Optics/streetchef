@@ -37,13 +37,15 @@ function formatProfile(user: Record<string, unknown>) {
   const role = (user.role as string) ?? 'customer';
   const driverProfile =
     role === 'driver' ? parseDriverProfile(user.driverProfile) : undefined;
+  const avatar =
+    (user.image as string | undefined) ?? (user.avatar as string | undefined);
 
   return {
     id: user.id as string,
     name: user.name as string,
     email: (user.email as string) ?? '',
     phone: (user.phone as string) ?? '',
-    avatar: user.image as string | undefined,
+    avatar,
     role,
     dateOfBirth: user.dateOfBirth as string | undefined,
     gender: user.gender as string | undefined,
@@ -51,20 +53,15 @@ function formatProfile(user: Record<string, unknown>) {
   };
 }
 
+async function loadCanonicalUser(userId: string): Promise<Record<string, unknown> | null> {
+  const dbUser = await getDb().collection('user').findOne({id: userId});
+  return dbUser as Record<string, unknown> | null;
+}
+
 profileRouter.get('/', async (req: AuthedRequest, res) => {
   const sessionUser = req.sessionUser as unknown as Record<string, unknown>;
-  let userRecord = sessionUser;
-
-  if (
-    (sessionUser.role as string) === 'driver' &&
-    !sessionUser.driverProfile
-  ) {
-    const dbUser = await getDb().collection('user').findOne({id: sessionUser.id});
-    if (dbUser) {
-      userRecord = {...sessionUser, ...dbUser};
-    }
-  }
-
+  const dbUser = await loadCanonicalUser(sessionUser.id as string);
+  const userRecord = dbUser ? {...sessionUser, ...dbUser} : sessionUser;
   res.json(formatProfile(userRecord));
 });
 
@@ -96,24 +93,14 @@ profileRouter.patch('/', async (req: AuthedRequest, res) => {
       body: updateBody,
     });
 
-    const session = await getAuth().api.getSession({
-      headers: fromNodeHeaders(req.headers),
-    });
-
-    if (!session?.user) {
+    const userId = req.sessionUser!.id;
+    const dbUser = await loadCanonicalUser(userId);
+    if (!dbUser) {
       res.status(400).json({error: 'Failed to update profile'});
       return;
     }
 
-    let userRecord = session.user as unknown as Record<string, unknown>;
-    if (driverProfile) {
-      const dbUser = await getDb().collection('user').findOne({id: userRecord.id});
-      if (dbUser) {
-        userRecord = {...userRecord, ...dbUser};
-      }
-    }
-
-    res.json(formatProfile(userRecord));
+    res.json(formatProfile(dbUser));
   } catch {
     res.status(500).json({error: 'Failed to update profile'});
   }

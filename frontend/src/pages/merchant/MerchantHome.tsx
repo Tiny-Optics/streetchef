@@ -4,6 +4,7 @@ import { Menu, Bell, TrendingUp, ShoppingBag, DollarSign, Clock, X, CheckCircle2
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppContext } from '../../context/AppContext';
 import { api } from '../../lib/api';
+import { SIGNED_OUT_PATH } from '../../lib/auth-routes';
 
 export const MerchantHome: React.FC = () => {
   const navigate = useNavigate();
@@ -211,8 +212,7 @@ export const MerchantHome: React.FC = () => {
               <div className="p-6 border-t border-gray-100">
                 <button 
                   onClick={async () => {
-                    await logout();
-                    navigate('/welcome');
+                    await logout(() => navigate(SIGNED_OUT_PATH));
                   }}
                   className="w-full py-3 text-red-500 font-bold text-lg hover:bg-red-50 rounded-xl transition-colors"
                 >
