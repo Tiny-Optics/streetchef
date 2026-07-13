@@ -4,6 +4,7 @@ import { MapPin, Clock, Star, Heart } from 'lucide-react';
 import { useMenu } from '../hooks/useMenu';
 import { useAppContext } from '../context/AppContext';
 import { categories } from '../data/menu';
+import { resolveImageUrl } from '../lib/api';
 import { motion } from 'motion/react';
 
 const homeCategories = categories.filter((c) => c !== 'All').slice(0, 8);
@@ -25,7 +26,7 @@ const categoryIcons: Record<string, string> = {
 };
 
 export const Home: React.FC = () => {
-  const { deliveryAddress } = useAppContext();
+  const { deliveryAddress, user } = useAppContext();
   const { items: menuItems } = useMenu();
   const popularItems = menuItems.filter(item => item.popular);
   const newItems = menuItems.slice(5, 10);
@@ -47,9 +48,13 @@ export const Home: React.FC = () => {
               </span>
             </Link>
           </div>
-          <div className="w-10 h-10 bg-gray-200 rounded-full overflow-hidden">
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" className="w-full h-full object-cover" />
-          </div>
+          <Link to="/profile" className="w-10 h-10 bg-gray-200 rounded-full overflow-hidden shrink-0">
+            <img
+              src={resolveImageUrl(user?.avatar ?? '') || 'https://i.pravatar.cc/150?img=11'}
+              alt="User"
+              className="w-full h-full object-cover"
+            />
+          </Link>
         </div>
       </header>
 
