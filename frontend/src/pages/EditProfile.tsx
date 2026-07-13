@@ -3,6 +3,7 @@ import {useNavigate} from 'react-router-dom';
 import {ArrowLeft, Edit2, Calendar} from 'lucide-react';
 import {useAppContext} from '../context/AppContext';
 import {api, resolveImageUrl} from '../lib/api';
+import {uploadAndSaveAvatar} from '../lib/uploadAvatar';
 
 export const EditProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -68,10 +69,8 @@ export const EditProfile: React.FC = () => {
     setSaving(true);
     setError('');
     try {
-      let avatar = avatarUrl;
       if (pendingAvatarFile) {
-        const uploaded = await api.upload.image(pendingAvatarFile);
-        avatar = uploaded.url;
+        await uploadAndSaveAvatar(pendingAvatarFile);
       }
 
       await api.profile.update({
@@ -79,7 +78,6 @@ export const EditProfile: React.FC = () => {
         phone: `${formData.phoneCode} ${formData.phoneNumber}`.trim(),
         dateOfBirth: formData.dob,
         gender: formData.gender,
-        ...(avatar ? {avatar} : {}),
       });
       await refreshUserData();
       navigate(-1);

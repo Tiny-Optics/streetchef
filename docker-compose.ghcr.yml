@@ -9,6 +9,8 @@ services:
     environment:
       PORT: "4000"
       NODE_ENV: production
+    volumes:
+      - ./backend/uploads:/app/uploads
 
   frontend:
     image: ghcr.io/tiny-optics/streetchef-frontend:latest

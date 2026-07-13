@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useRef, useState} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 import {
   ChevronRight,
@@ -14,31 +14,76 @@ import {
 import {useAppContext} from '../context/AppContext';
 import {resolveImageUrl} from '../lib/api';
 import {SIGNED_OUT_PATH} from '../lib/auth-routes';
+import {uploadAndSaveAvatar} from '../lib/uploadAvatar';
+
+const DEFAULT_AVATAR = 'https://i.pravatar.cc/150?img=11';
 
 export const Profile: React.FC = () => {
-  const {user, logout} = useAppContext();
+  const {user, logout, refreshUserData} = useAppContext();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
 
   const handleLogout = async () => {
     await logout(() => navigate(SIGNED_OUT_PATH));
   };
+
+  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setAvatarError('');
+    setUploadingAvatar(true);
+    const preview = URL.createObjectURL(file);
+    setAvatarPreview(preview);
+
+    try {
+      await uploadAndSaveAvatar(file);
+      await refreshUserData();
+      setAvatarPreview(null);
+    } catch {
+      setAvatarError('Failed to update profile photo. Please try again.');
+      setAvatarPreview(null);
+    } finally {
+      URL.revokeObjectURL(preview);
+      setUploadingAvatar(false);
+    }
+  };
+
+  const displayAvatar =
+    avatarPreview ??
+    resolveImageUrl(user?.avatar ?? '') ??
+    DEFAULT_AVATAR;
 
   return (
     <div className="flex flex-col min-h-screen bg-white pb-24">
       <div className="px-6 pt-12 pb-6">
         <div className="flex items-center">
           <div className="relative">
-            <div className="w-20 h-20 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className={`w-20 h-20 bg-gray-200 rounded-full overflow-hidden ${uploadingAvatar ? 'opacity-60' : ''}`}
+            >
               <img
-                src={resolveImageUrl(user?.avatar ?? '') || 'https://i.pravatar.cc/150?img=11'}
+                src={displayAvatar}
                 alt="User"
                 className="w-full h-full object-cover"
               />
             </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarSelect}
+            />
             <button
               type="button"
-              onClick={() => navigate('/edit-profile')}
-              className="absolute bottom-0 right-0 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center border-2 border-white text-white"
+              disabled={uploadingAvatar}
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute bottom-0 right-0 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center border-2 border-white text-white disabled:opacity-50"
             >
               <Edit2 size={12} />
             </button>
@@ -46,6 +91,12 @@ export const Profile: React.FC = () => {
           <div className="ml-4 flex-1">
             <h1 className="text-xl font-bold text-gray-900">{user?.name ?? 'Guest'}</h1>
             <p className="text-gray-500 text-sm">{user?.email}</p>
+            {uploadingAvatar && (
+              <p className="text-orange-600 text-xs mt-1">Updating photo...</p>
+            )}
+            {avatarError && (
+              <p className="text-red-600 text-xs mt-1">{avatarError}</p>
+            )}
           </div>
         </div>
       </div>

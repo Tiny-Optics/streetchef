@@ -79,10 +79,14 @@ profileRouter.patch('/', async (req: AuthedRequest, res) => {
     const updateBody: Record<string, unknown> = {
       name,
       phone,
-      image: avatar,
       dateOfBirth,
       gender,
     };
+
+    if (avatar !== undefined) {
+      updateBody.image = avatar;
+      updateBody.avatar = avatar;
+    }
 
     if (driverProfile) {
       updateBody.driverProfile = JSON.stringify(driverProfile);
