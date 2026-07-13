@@ -87,6 +87,8 @@ jobs:
             cd "$WORKDIR"
             git pull "$REPO_URL" main
 
+            mkdir -p "$WORKDIR/backend/uploads"
+
             if [ ! -f "$WORKDIR/backend/.env" ]; then
               if [ -f "${WORKDIR}.bak/backend/.env" ]; then
                 mkdir -p "$WORKDIR/backend"

@@ -12,14 +12,14 @@ import {
   LogOut,
 } from 'lucide-react';
 import {useAppContext} from '../context/AppContext';
-import {resolveImageUrl} from '../lib/api';
+import {api, resolveImageUrl} from '../lib/api';
 import {SIGNED_OUT_PATH} from '../lib/auth-routes';
 import {uploadAndSaveAvatar} from '../lib/uploadAvatar';
 
 const DEFAULT_AVATAR = 'https://i.pravatar.cc/150?img=11';
 
 export const Profile: React.FC = () => {
-  const {user, logout, refreshUserData} = useAppContext();
+  const {user, logout, refreshUserData, setUser} = useAppContext();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -37,14 +37,28 @@ export const Profile: React.FC = () => {
 
     setAvatarError('');
     setUploadingAvatar(true);
+    const previousAvatar = user?.avatar;
     const preview = URL.createObjectURL(file);
     setAvatarPreview(preview);
 
     try {
-      await uploadAndSaveAvatar(file);
-      await refreshUserData();
+      const url = await uploadAndSaveAvatar(file);
+      if (user) {
+        setUser({...user, avatar: url});
+      }
       setAvatarPreview(null);
+      void refreshUserData();
     } catch {
+      try {
+        const profile = await api.profile.get();
+        setUser(profile);
+        setAvatarPreview(null);
+        if (profile.avatar && profile.avatar !== previousAvatar) {
+          return;
+        }
+      } catch {
+        // Fall through to error message.
+      }
       setAvatarError('Failed to update profile photo. Please try again.');
       setAvatarPreview(null);
     } finally {
