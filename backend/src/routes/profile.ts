@@ -76,35 +76,47 @@ profileRouter.patch('/', async (req: AuthedRequest, res) => {
       driverProfile?: DriverProfile;
     };
 
-    const updateBody: Record<string, unknown> = {
-      name,
-      phone,
-      dateOfBirth,
-      gender,
-    };
+    const mongoUpdate: Record<string, unknown> = {};
 
+    if (name !== undefined) mongoUpdate.name = name;
+    if (phone !== undefined) mongoUpdate.phone = phone;
+    if (dateOfBirth !== undefined) mongoUpdate.dateOfBirth = dateOfBirth;
+    if (gender !== undefined) mongoUpdate.gender = gender;
     if (avatar !== undefined) {
-      updateBody.image = avatar;
-      updateBody.avatar = avatar;
+      mongoUpdate.image = avatar;
+      mongoUpdate.avatar = avatar;
     }
-
     if (driverProfile) {
-      updateBody.driverProfile = JSON.stringify(driverProfile);
+      mongoUpdate.driverProfile = JSON.stringify(driverProfile);
     }
 
-    await getAuth().api.updateUser({
-      headers: fromNodeHeaders(req.headers),
-      body: updateBody,
-    });
+    if (Object.keys(mongoUpdate).length === 0) {
+      res.status(400).json({error: 'No fields to update'});
+      return;
+    }
 
     const userId = req.sessionUser!.id;
+    const sessionUser = req.sessionUser as unknown as Record<string, unknown>;
+
+    await getDb().collection('user').updateOne({id: userId}, {$set: mongoUpdate});
+
+    // Best-effort session sync; cookie refresh can fail without blocking persistence.
+    try {
+      await getAuth().api.updateUser({
+        headers: fromNodeHeaders(req.headers),
+        body: mongoUpdate,
+      });
+    } catch {
+      // Profile fields are already saved in MongoDB.
+    }
+
     const dbUser = await loadCanonicalUser(userId);
     if (!dbUser) {
       res.status(400).json({error: 'Failed to update profile'});
       return;
     }
 
-    res.json(formatProfile(dbUser));
+    res.json(formatProfile({...sessionUser, ...dbUser}));
   } catch {
     res.status(500).json({error: 'Failed to update profile'});
   }
