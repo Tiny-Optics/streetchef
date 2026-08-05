@@ -122,24 +122,7 @@ jobs:
             if [ ! -f "$CERT_PATH" ]; then
               echo "No certificate found; requesting initial Let's Encrypt certificate"
               if [ -z "${CERTBOT_EMAIL:-}" ]; then
-                CERTBOT_EMAIL="$(python3 - "$WORKDIR/backend/.env" <<'PY'
-from pathlib import Path
-import sys
-
-env_path = Path(sys.argv[1])
-email = ""
-
-if env_path.exists():
-    for line in env_path.read_text().splitlines():
-        if line.startswith("EMAIL_FROM="):
-            email = line.split("=", 1)[1].strip()
-            break
-        if not email and line.startswith("SMTP_USER="):
-            email = line.split("=", 1)[1].strip()
-
-print(email)
-PY
-)"
+                CERTBOT_EMAIL="$(awk -F= '/^(EMAIL_FROM|SMTP_USER)=/ {print $2; exit}' "$WORKDIR/backend/.env")"
               fi
 
               if [ -z "${CERTBOT_EMAIL:-}" ]; then
