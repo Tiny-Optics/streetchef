@@ -60,15 +60,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: GITHUB_TOKEN,GITHUB_ACTOR,GITHUB_REPOSITORY
+          envs: GITHUB_TOKEN,GITHUB_ACTOR,GITHUB_REPOSITORY,CERTBOT_EMAIL
           script: |
             set -e
             WORKDIR="/opt/streetchef"
             REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+            DOMAIN="app.streetchef.co.za"
+            CERT_PATH="/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"
             echo "Ensuring repo exists on server"
 
             if [ -d "$WORKDIR/.git" ]; then
@@ -99,16 +102,38 @@ jobs:
               fi
             fi
 
-            if ! command -v nginx >/dev/null 2>&1; then
-              apt-get update
-              apt-get install -y nginx
-            fi
+            bash ./deploy/update-backend-env.sh "$WORKDIR/backend/.env"
 
-            install -D -m 644 ./deploy/nginx/streetchef.conf /etc/nginx/sites-available/streetchef
-            ln -sfn /etc/nginx/sites-available/streetchef /etc/nginx/sites-enabled/streetchef
-            rm -f /etc/nginx/sites-enabled/default || true
+            if ! command -v nginx >/dev/null 2>&1 || ! command -v certbot >/dev/null 2>&1; then
+              apt-get update
+              apt-get install -y nginx certbot
+            fi
+            systemctl enable --now certbot.timer || true
+
+            chmod +x ./deploy/nginx/install-streetchef-site.sh
+            bash ./deploy/nginx/install-streetchef-site.sh
             nginx -t
             systemctl reload nginx
+
+            if [ ! -f "$CERT_PATH" ]; then
+              if [ -z "${CERTBOT_EMAIL:-}" ]; then
+                echo "Missing CERTBOT_EMAIL GitHub secret"
+                exit 1
+              fi
+
+              certbot certonly \
+                --webroot \
+                -w /var/www/certbot \
+                -d "$DOMAIN" \
+                --email "$CERTBOT_EMAIL" \
+                --agree-tos \
+                --non-interactive
+
+              bash ./deploy/nginx/install-streetchef-site.sh
+              nginx -t
+              systemctl reload nginx
+              certbot renew --dry-run
+            fi
 
             echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
