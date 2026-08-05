@@ -113,6 +113,28 @@ For running services outside Docker: Node.js 20+ and a MongoDB instance (local o
 
 Do not commit `.env` files or real secrets.
 
+## Production domain setup
+
+To serve the app on `https://app.streetchef.co.za`:
+
+1. Create a DNS `A` record for `app.streetchef.co.za` pointing to `169.255.58.159`.
+2. Add a GitHub Actions secret named `CERTBOT_EMAIL` with the email address to use for Let's Encrypt.
+3. Push the production nginx config from `deploy/nginx/streetchef.conf` to `main`.
+
+The deploy workflow will then:
+
+- ensure `/opt/streetchef/backend/.env` uses:
+  - `BETTER_AUTH_URL=https://app.streetchef.co.za/api/auth`
+  - `FRONTEND_URL=https://app.streetchef.co.za`
+- install nginx and certbot on the VPS if needed
+- install a bootstrap HTTP nginx config on first deploy
+- request the initial Let's Encrypt certificate for `app.streetchef.co.za`
+- switch nginx to the HTTPS config from the repo
+- reload nginx
+- recreate the backend and frontend containers
+
+The first deploy will fail if DNS is not already pointing at the VPS or if `CERTBOT_EMAIL` is missing.
+
 ## Development
 
 ### MongoDB: local Docker vs Atlas
