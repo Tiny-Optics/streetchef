@@ -118,7 +118,7 @@ Do not commit `.env` files or real secrets.
 To serve the app on `https://app.streetchef.co.za`:
 
 1. Create a DNS `A` record for `app.streetchef.co.za` pointing to `169.255.58.159`.
-2. Add a GitHub Actions secret named `CERTBOT_EMAIL` with the email address to use for Let's Encrypt.
+2. Add a GitHub Actions secret named `CERTBOT_EMAIL` with the email address to use for Let's Encrypt. If you skip this, deploy falls back to `EMAIL_FROM` and then `SMTP_USER` from `backend/.env`.
 3. Push the production nginx config from `deploy/nginx/streetchef.conf` to `main`.
 
 The deploy workflow will then:
@@ -133,7 +133,7 @@ The deploy workflow will then:
 - reload nginx
 - recreate the backend and frontend containers
 
-The first deploy will fail if DNS is not already pointing at the VPS or if `CERTBOT_EMAIL` is missing.
+The first deploy will fail if DNS is not already pointing at the VPS and there is no usable email in either `CERTBOT_EMAIL`, `EMAIL_FROM`, or `SMTP_USER`.
 
 ## Development
 

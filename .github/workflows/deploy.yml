@@ -72,6 +72,7 @@ jobs:
             REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
             DOMAIN="app.streetchef.co.za"
             CERT_PATH="/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"
+            export DEBIAN_FRONTEND=noninteractive
             echo "Ensuring repo exists on server"
 
             if [ -d "$WORKDIR/.git" ]; then
@@ -104,20 +105,45 @@ jobs:
 
             bash ./deploy/update-backend-env.sh "$WORKDIR/backend/.env"
 
-            if ! command -v nginx >/dev/null 2>&1 || ! command -v certbot >/dev/null 2>&1; then
+            if ! command -v git >/dev/null 2>&1 || ! command -v docker >/dev/null 2>&1 || ! docker compose version >/dev/null 2>&1 || ! command -v nginx >/dev/null 2>&1 || ! command -v certbot >/dev/null 2>&1 || ! command -v python3 >/dev/null 2>&1; then
+              echo "Installing server dependencies"
               apt-get update
-              apt-get install -y nginx certbot
+              apt-get install -y git docker.io docker-compose-plugin nginx certbot python3
             fi
+            systemctl enable --now docker
             systemctl enable --now certbot.timer || true
 
+            echo "Installing nginx site config"
             chmod +x ./deploy/nginx/install-streetchef-site.sh
             bash ./deploy/nginx/install-streetchef-site.sh
             nginx -t
             systemctl reload nginx
 
             if [ ! -f "$CERT_PATH" ]; then
+              echo "No certificate found; requesting initial Let's Encrypt certificate"
               if [ -z "${CERTBOT_EMAIL:-}" ]; then
-                echo "Missing CERTBOT_EMAIL GitHub secret"
+                CERTBOT_EMAIL="$(python3 - "$WORKDIR/backend/.env" <<'PY'
+from pathlib import Path
+import sys
+
+env_path = Path(sys.argv[1])
+email = ""
+
+if env_path.exists():
+    for line in env_path.read_text().splitlines():
+        if line.startswith("EMAIL_FROM="):
+            email = line.split("=", 1)[1].strip()
+            break
+        if not email and line.startswith("SMTP_USER="):
+            email = line.split("=", 1)[1].strip()
+
+print(email)
+PY
+)"
+              fi
+
+              if [ -z "${CERTBOT_EMAIL:-}" ]; then
+                echo "Missing CERTBOT_EMAIL GitHub secret and no EMAIL_FROM/SMTP_USER found in backend/.env"
                 exit 1
               fi
 
@@ -135,6 +161,7 @@ jobs:
               certbot renew --dry-run
             fi
 
+            echo "Pulling and restarting application containers"
             echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
             docker compose -f docker-compose.ghcr.yml down
