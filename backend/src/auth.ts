@@ -1,9 +1,12 @@
-import {betterAuth} from 'better-auth';
+import {APIError, betterAuth} from 'better-auth';
 import {mongodbAdapter} from 'better-auth/adapters/mongodb';
 import type {Db} from 'mongodb';
 import {sendPasswordResetEmail} from './email.js';
 
 const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
+
+/** TEMPORARY. See COMING_SOON.md — remove this hook to restore eater/driver signup. */
+const EATER_DRIVER_SIGNUP_DISABLED = true;
 
 export function createAuth(db: Db) {
   return betterAuth({
@@ -54,6 +57,24 @@ export function createAuth(db: Db) {
           type: 'string',
           required: false,
           input: true,
+        },
+      },
+    },
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (user) => {
+            if (!EATER_DRIVER_SIGNUP_DISABLED) {
+              return;
+            }
+            const role = (user.role as string | undefined) ?? 'customer';
+            if (role !== 'merchant') {
+              throw new APIError('BAD_REQUEST', {
+                message:
+                  'Eater and driver signup is temporarily unavailable. StreetChef accounts only.',
+              });
+            }
+          },
         },
       },
     },

@@ -1,8 +1,13 @@
 import React, {useState} from 'react';
-import {useNavigate, Link, useSearchParams} from 'react-router-dom';
+import {useNavigate, Link, useSearchParams, Navigate} from 'react-router-dom';
 import {ArrowLeft, Eye, EyeOff} from 'lucide-react';
 import {signUp} from '../../lib/auth-client';
 import {useAppContext} from '../../context/AppContext';
+import {
+  COMING_SOON_PATH,
+  EATER_DRIVER_COMING_SOON,
+  roleHome,
+} from '../../lib/coming-soon';
 
 export const SignUp: React.FC = () => {
   const navigate = useNavigate();
@@ -27,6 +32,10 @@ export const SignUp: React.FC = () => {
   const [kitchenAddress, setKitchenAddress] = useState('');
   const [cuisineType, setCuisineType] = useState('');
 
+  if (EATER_DRIVER_COMING_SOON && type !== 'merchant') {
+    return <Navigate to={COMING_SOON_PATH} replace />;
+  }
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreed) return;
@@ -39,6 +48,11 @@ export const SignUp: React.FC = () => {
     let role: 'customer' | 'driver' | 'merchant' = 'customer';
     if (type === 'driver') role = 'driver';
     if (type === 'merchant') role = 'merchant';
+
+    if (EATER_DRIVER_COMING_SOON && role !== 'merchant') {
+      setError('Eater and driver signup is temporarily unavailable.');
+      return;
+    }
 
     const driverProfile =
       role === 'driver'
@@ -75,10 +89,7 @@ export const SignUp: React.FC = () => {
       }
 
       await refreshUserData();
-
-      if (role === 'driver') navigate('/driver/home');
-      else if (role === 'merchant') navigate('/merchant/dashboard');
-      else navigate('/home');
+      navigate(roleHome(role));
     } catch {
       setError('Sign up failed. Please try again.');
     } finally {

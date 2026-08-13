@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
+import { BrandLogo } from '../../components/BrandLogo';
+import { COMING_SOON_CTA_CLASS, EATER_DRIVER_COMING_SOON } from '../../lib/coming-soon';
 
 export const Welcome: React.FC = () => {
   const navigate = useNavigate();
@@ -25,6 +27,7 @@ export const Welcome: React.FC = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="text-center mb-10"
         >
+          <BrandLogo variant="dark" size="md" className="justify-center mb-6" />
           <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
             Welcome to <span className="text-orange-500">StreetChef</span>
           </h1>
@@ -42,12 +45,22 @@ export const Welcome: React.FC = () => {
           transition={{ duration: 0.5, delay: 0.4 }}
           className="space-y-4"
         >
-          <button
-            onClick={() => navigate('/signup')}
-            className="w-full bg-orange-500 text-white py-4 rounded-full font-bold text-lg shadow-lg shadow-orange-500/30 hover:bg-orange-600 transition-colors"
-          >
-            Create an Account
-          </button>
+          {EATER_DRIVER_COMING_SOON ? (
+            <button
+              type="button"
+              disabled
+              className={`w-full bg-orange-500 text-white py-4 rounded-full font-bold text-lg shadow-lg shadow-orange-500/30 ${COMING_SOON_CTA_CLASS}`}
+            >
+              Create an Account <span className="ml-2 text-xs uppercase tracking-wide">Coming soon</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/signup')}
+              className="w-full bg-orange-500 text-white py-4 rounded-full font-bold text-lg shadow-lg shadow-orange-500/30 hover:bg-orange-600 transition-colors"
+            >
+              Create an Account
+            </button>
+          )}
           <button
             onClick={() => navigate('/login')}
             className="w-full bg-white text-gray-900 py-4 rounded-full font-bold text-lg shadow-lg hover:bg-gray-100 transition-colors"

@@ -2,6 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Bike, ArrowRight, Store, CheckCircle2 } from 'lucide-react';
+import { BrandLogo } from '../components/BrandLogo';
+import { COMING_SOON_CTA_CLASS, EATER_DRIVER_COMING_SOON } from '../lib/coming-soon';
 
 export const PartnerLanding: React.FC = () => {
   const navigate = useNavigate();
@@ -12,7 +14,7 @@ export const PartnerLanding: React.FC = () => {
       <header className="fixed top-0 left-0 right-0 bg-white shadow-sm z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
-            <span className="text-2xl font-bold text-gray-900">Street<span className="text-orange-500">Chef</span></span>
+            <BrandLogo size="sm" />
           </div>
           <div className="hidden md:flex items-center space-x-8">
             <a href="#merchants" className="text-gray-600 hover:text-orange-500 font-medium">Become a StreetChef</a>
@@ -23,12 +25,22 @@ export const PartnerLanding: React.FC = () => {
             >
               Log in
             </button>
-            <button 
-              onClick={() => navigate('/signup')}
-              className="bg-black text-white px-6 py-2.5 rounded-full font-medium hover:bg-gray-800 transition-colors"
-            >
-              Sign up
-            </button>
+            {EATER_DRIVER_COMING_SOON ? (
+              <button
+                type="button"
+                disabled
+                className={`bg-black text-white px-6 py-2.5 rounded-full font-medium ${COMING_SOON_CTA_CLASS}`}
+              >
+                Sign up <span className="text-[10px] uppercase tracking-wide">Coming soon</span>
+              </button>
+            ) : (
+              <button 
+                onClick={() => navigate('/signup')}
+                className="bg-black text-white px-6 py-2.5 rounded-full font-medium hover:bg-gray-800 transition-colors"
+              >
+                Sign up
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -48,13 +60,23 @@ export const PartnerLanding: React.FC = () => {
               If you have a passion for food or dessert and want the world to not only taste your delicious home-cooked food, but also generate an income from home, then look no further than StreetChef.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
-              <button
-                type="button"
-                onClick={() => navigate('/welcome')}
-                className="bg-white text-orange-600 border-2 border-orange-500 px-8 py-4 rounded-full font-bold text-lg hover:bg-orange-50 transition-colors flex items-center justify-center"
-              >
-                Order food
-              </button>
+              {EATER_DRIVER_COMING_SOON ? (
+                <button
+                  type="button"
+                  disabled
+                  className={`bg-white text-orange-600 border-2 border-orange-500 px-8 py-4 rounded-full font-bold text-lg flex items-center justify-center ${COMING_SOON_CTA_CLASS}`}
+                >
+                  Order food <span className="ml-2 text-xs uppercase tracking-wide">Coming soon</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => navigate('/welcome')}
+                  className="bg-white text-orange-600 border-2 border-orange-500 px-8 py-4 rounded-full font-bold text-lg hover:bg-orange-50 transition-colors flex items-center justify-center"
+                >
+                  Order food
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => navigate('/signup?type=merchant')}
@@ -62,12 +84,22 @@ export const PartnerLanding: React.FC = () => {
               >
                 Become a StreetChef <ArrowRight className="ml-2 w-5 h-5" />
               </button>
-              <button 
-                onClick={() => navigate('/signup?type=driver')}
-                className="bg-gray-100 text-gray-900 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-200 transition-colors flex items-center justify-center"
-              >
-                Sign up to drive <ArrowRight className="ml-2 w-5 h-5" />
-              </button>
+              {EATER_DRIVER_COMING_SOON ? (
+                <button
+                  type="button"
+                  disabled
+                  className={`bg-gray-100 text-gray-900 px-8 py-4 rounded-full font-bold text-lg flex items-center justify-center ${COMING_SOON_CTA_CLASS}`}
+                >
+                  Sign up to drive <span className="ml-2 text-xs uppercase tracking-wide">Coming soon</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => navigate('/signup?type=driver')}
+                  className="bg-gray-100 text-gray-900 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-200 transition-colors flex items-center justify-center"
+                >
+                  Sign up to drive <ArrowRight className="ml-2 w-5 h-5" />
+                </button>
+              )}
             </div>
           </motion.div>
           <motion.div 
@@ -154,12 +186,22 @@ export const PartnerLanding: React.FC = () => {
                   </li>
                 ))}
               </ul>
-              <button 
-                onClick={() => navigate('/signup?type=driver')}
-                className="bg-orange-500 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-orange-600 transition-colors"
-              >
-                Sign up to deliver
-              </button>
+              {EATER_DRIVER_COMING_SOON ? (
+                <button
+                  type="button"
+                  disabled
+                  className={`bg-orange-500 text-white px-8 py-4 rounded-full font-bold text-lg ${COMING_SOON_CTA_CLASS}`}
+                >
+                  Sign up to deliver <span className="ml-2 text-xs uppercase tracking-wide">Coming soon</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => navigate('/signup?type=driver')}
+                  className="bg-orange-500 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-orange-600 transition-colors"
+                >
+                  Sign up to deliver
+                </button>
+              )}
             </div>
             <div className="relative h-[600px] rounded-3xl overflow-hidden shadow-2xl">
               <img 
@@ -178,7 +220,7 @@ export const PartnerLanding: React.FC = () => {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center mb-6">
-                <span className="text-2xl font-bold text-white">Street<span className="text-orange-500">Chef</span></span>
+                <BrandLogo variant="dark" size="sm" />
               </div>
               <p className="text-gray-400">
                 Experience A Taste Of Home. Connecting you with the best home-cooked food in town.

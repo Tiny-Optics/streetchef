@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { BrandLogo } from '../components/BrandLogo';
 
 export const Splash: React.FC = () => {
   return (
@@ -8,9 +9,9 @@ export const Splash: React.FC = () => {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="text-center"
+        className="text-center flex flex-col items-center"
       >
-        <h1 className="text-5xl font-bold text-gray-900 mb-2 tracking-tight">StreetChef</h1>
+        <BrandLogo size="lg" className="mb-4 justify-center" />
         <p className="text-gray-600 text-lg">A taste of home</p>
       </motion.div>
     </div>

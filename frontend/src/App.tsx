@@ -8,6 +8,12 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-
 import { AppProvider, useAppContext } from './context/AppContext';
 import type {User} from './context/AppContext';
 import { SIGNED_OUT_PATH } from './lib/auth-routes';
+import {
+  COMING_SOON_PATH,
+  EATER_DRIVER_COMING_SOON,
+  isStreetChefRole,
+  roleHome,
+} from './lib/coming-soon';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Menu } from './pages/Menu';
@@ -38,6 +44,7 @@ import { Notifications } from './pages/Notifications';
 import { Security } from './pages/Security';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { PartnerLanding } from './pages/PartnerLanding';
+import { ComingSoon } from './pages/ComingSoon';
 import { DriverHome } from './pages/driver/DriverHome';
 import { DriverEarnings } from './pages/driver/Earnings';
 import { DriverAccount } from './pages/driver/Account';
@@ -55,17 +62,6 @@ const LoadingScreen = () => (
 
 type AppRole = NonNullable<User['role']>;
 
-function roleHome(role?: User['role']) {
-  switch (role) {
-    case 'driver':
-      return '/driver/home';
-    case 'merchant':
-      return '/merchant/dashboard';
-    default:
-      return '/home';
-  }
-}
-
 function normalizeRole(role?: User['role']): AppRole {
   return role ?? 'customer';
 }
@@ -74,6 +70,9 @@ const ProtectedRoute = () => {
   const { user, authLoading } = useAppContext();
   if (authLoading) return <LoadingScreen />;
   if (!user) return <Navigate to={SIGNED_OUT_PATH} replace />;
+  if (EATER_DRIVER_COMING_SOON && !isStreetChefRole(user.role)) {
+    return <Navigate to={COMING_SOON_PATH} replace />;
+  }
   return <Outlet />;
 };
 
@@ -106,11 +105,24 @@ const HomeRoute = () => <Home />;
 const PartnerLandingRoute = () => {
   const {user, authLoading} = useAppContext();
   if (authLoading) return <LoadingScreen />;
-  const role = user?.role;
-  if (user && (role === 'customer' || !role)) {
-    return <Navigate to="/home" replace />;
+  if (user && (normalizeRole(user.role) === 'customer' || (EATER_DRIVER_COMING_SOON && !isStreetChefRole(user.role)))) {
+    return <Navigate to={roleHome(user.role)} replace />;
   }
   return <PartnerLanding />;
+};
+
+const LoginRoute = () => {
+  const {user, authLoading} = useAppContext();
+  if (authLoading) return <LoadingScreen />;
+  if (user) return <Navigate to={roleHome(user.role)} replace />;
+  return <Login />;
+};
+
+const SignUpRoute = () => {
+  const {user, authLoading} = useAppContext();
+  if (authLoading) return <LoadingScreen />;
+  if (user) return <Navigate to={roleHome(user.role)} replace />;
+  return <SignUp />;
 };
 
 const ONBOARDING_KEY = 'streetchef_onboarding_complete';
@@ -136,9 +148,10 @@ const AppContent = () => {
         />
         {!onboardingDone && <Route path="/splash" element={<Navigate to="/onboarding" replace />} />}
 
+        <Route path="/coming-soon" element={<ComingSoon />} />
         <Route path="/welcome" element={<AuthEntry />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
+        <Route path="/login" element={<LoginRoute />} />
+        <Route path="/signup" element={<SignUpRoute />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-code" element={<VerifyCode />} />
         <Route path="/new-password" element={<NewPassword />} />

@@ -3,6 +3,11 @@ import {useNavigate, Link, useSearchParams} from 'react-router-dom';
 import {ArrowLeft, Eye, EyeOff} from 'lucide-react';
 import {signIn} from '../../lib/auth-client';
 import {useAppContext} from '../../context/AppContext';
+import {
+  COMING_SOON_CTA_CLASS,
+  EATER_DRIVER_COMING_SOON,
+  roleHome,
+} from '../../lib/coming-soon';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -41,10 +46,7 @@ export const Login: React.FC = () => {
 
       await refreshUserData();
       const role = (result.data?.user as {role?: string})?.role ?? type ?? 'customer';
-
-      if (role === 'driver') navigate('/driver/home');
-      else if (role === 'merchant') navigate('/merchant/dashboard');
-      else navigate('/home');
+      navigate(roleHome(role));
     } catch {
       setError('Sign in failed. Check your credentials.');
     } finally {
@@ -158,12 +160,18 @@ export const Login: React.FC = () => {
       <div className="mt-auto pt-8 text-center">
         <p className="text-gray-600">
           Don't have an account?{' '}
-          <Link
-            to={type ? `/signup?type=${type}` : '/signup'}
-            className="text-orange-500 font-bold"
-          >
-            Sign Up
-          </Link>
+          {EATER_DRIVER_COMING_SOON && type !== 'merchant' ? (
+            <span className={`text-gray-400 font-bold ${COMING_SOON_CTA_CLASS}`}>
+              Sign Up <span className="text-xs font-semibold uppercase">Coming soon</span>
+            </span>
+          ) : (
+            <Link
+              to={type ? `/signup?type=${type}` : '/signup'}
+              className="text-orange-500 font-bold"
+            >
+              Sign Up
+            </Link>
+          )}
         </p>
       </div>
     </div>
